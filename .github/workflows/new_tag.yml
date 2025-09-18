@@ -1,9 +1,8 @@
 # This Github action is triggered when a new (non release-candidate, aka not '-rc') tag is pushed in master branch:
-# - define a new Github release
 # - compute tests coverage
 # - compute code complexity
 # - publishes the library on test.pypi
-# - publishes the library on pypi.
+# - at last, define a new Github release.
 
 name: New tag
 
