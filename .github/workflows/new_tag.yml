@@ -141,6 +141,10 @@ jobs:
           uv venv --seed venv
           . venv/bin/activate
           uv pip install toml
+      - name: Install required dependencies
+        run: |
+          apt-get update
+          apt-get install -y curl jq
       - name: Check for existing package on TestPyPI
         id: check_package
         run: |
