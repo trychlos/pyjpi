@@ -9,7 +9,6 @@ name: New tag
 
 env:
   CACHE_VERSION: 1
-  DEFAULT_PYTHON: "3.13"
   PRE_COMMIT_HOME: ~/.cache/pre-commit
   VENV: venv
 
@@ -38,6 +37,7 @@ jobs:
     name: Process test coverage
     needs: gate
     runs-on: ubuntu-latest
+    container: python:3.13-slim
     steps:
       - name: Check out committed code
         uses: actions/checkout@v5
