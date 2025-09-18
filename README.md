@@ -24,10 +24,7 @@
 
 This library is a key component for a core integration with [Home Assistant](https://www.home-assistant.io).
 
-More details on the integration can be found on the [JPI](https://www.home-assistant.io/integrations/jpi/) page. To add JPI directly feel free to use the button
-below:
-
-[![Open your Home Assistant instance and show your integrations.](https://my.home-assistant.io/badges/config_flow_start.svg)](https://my.home-assistant.io/redirect/_change/?redirect=config_flow_start%2F%3Fdomain%3Djpi)
+More details on the integration can be found on the [JPI](https://www.home-assistant.io/integrations/jpi/) page.
 
 ## Features
 
