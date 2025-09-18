@@ -1,10 +1,6 @@
 name: _complexity
 on:
-  workflow_call:
-    inputs:
-      py-version:
-        type: string
-        default: "3.13"
+  workflow_call: {}
 
 jobs:
   complexity:
