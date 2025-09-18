@@ -3,13 +3,7 @@
 # - compute code complexity
 # - publishes the library on test.pypi
 # - at last, define a new Github release.
-
 name: New tag
-
-env:
-  CACHE_VERSION: 1
-  PRE_COMMIT_HOME: ~/.cache/pre-commit
-  VENV: venv
 
 on:
   workflow_dispatch:
@@ -23,188 +17,45 @@ jobs:
       - run: echo "gate passed"
 
   shellcheck:
-    name: Shellcheck
+    if: ${{ always() && needs.gate.result == 'success' }}
     needs:
       - gate
-    runs-on: ubuntu-latest
-    steps:
-      - name: Check out committed code
-        uses: actions/checkout@v5
-      - name: Run ShellCheck
-        uses: ludeeus/action-shellcheck@master
+    uses: ${{ github.repository }}/.github/workflows/_shellcheck.yml@${{ github.ref }}
+    secrets: inherit
 
-  pytest:
-    name: Run pytest using Python ${{ matrix.python-version }}
+  tests_and_coverage:
     needs:
       - gate
-    runs-on: ubuntu-latest
-    container: python:3.13-slim
-    strategy:
-      matrix:
-        python-version: ["3.13"]
-    steps:
-      - name: Check out committed code
-        uses: actions/checkout@v5
-      - name: Prepare python
-        run: |
-          pip install uv
-          uv venv --seed venv
-          . venv/bin/activate
-          uv pip install -r requirements.txt -r requirements-test.txt
-          uv pip install -e .
-      - name: Run all tests
-        run: |
-          . venv/bin/activate
-          pytest --log-level info tests/ --cov='pyjpi/'
-      - name: Upload coverage artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: coverage-${{ matrix.python-version }}
-          path: .coverage
-          if-no-files-found: error
-          include-hidden-files: true
-
-  coverage:
-    name: Process test coverage
-    needs:
-      - pytest
-    runs-on: ubuntu-latest
-    container: python:3.13-slim
-    steps:
-      - name: Check out committed code
-        uses: actions/checkout@v5
-      - name: Prepare python
-        run: |
-          pip install uv
-          uv venv --seed venv
-          . venv/bin/activate
-          uv pip install -r requirements.txt -r requirements-test.txt
-      - name: Download all coverage artifacts
-        uses: actions/download-artifact@v5
-        with:
-          pattern: coverage-*
-          merge-multiple: true
-          path: ${{ github.workspace }}/artifacts
-      - name: Combine coverage results
-        run: |
-          . venv/bin/activate
-          coverage combine artifacts/.coverage*
-          coverage report --fail-under=85
-          coverage xml
-      - name: Install required dependencies
-        run: |
-          apt-get update
-          apt-get install -y git curl gnupg ca-certificates
-      - name: Upload coverage to Codecov
-        uses: codecov/codecov-action@v5
-        env:
-          CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
-          slug: trychlos/pyjpi
+    uses: ${{ github.repository }}/.github/workflows/_pytest_coverage.yml@${{ github.ref }}
+    with:
+      py-version: "3.13"
+      min-coverage: 85
+    secrets:
+      codecov-token: ${{ secrets.CODECOV_TOKEN }}
 
   complexity:
-    name: Process test complexity
-    runs-on: ubuntu-latest
-    container: python:3.13-slim
     needs:
-      - coverage
-    steps:
-      - name: Check out committed code
-        uses: actions/checkout@v5
-      - name: Prepare python
-        run: |
-          pip install uv
-          uv venv --seed venv
-          . venv/bin/activate
-          uv pip install -r requirements.txt -r requirements-test.txt
-      - name: Run complexity report (click to view details)
-        run: |
-          . venv/bin/activate
-          echo "Showing complexity higher or equal to 'C'"
-          radon cc pyjpi/ tests/ -s -nc --no-assert
+      - tests_and_coverage
+    uses: ${{ github.repository }}/.github/workflows/_complexity.yml@${{ github.ref }}
+    with:
+      py-version: "3.13"
+    secrets: inherit
 
-  test-publishing:
-    name: Build and publish to TestPyPI
-    runs-on: ubuntu-latest
-    container: python:3.13-slim
-    environment: testpypi
-    permissions:
-        id-token: write
+  testpypi:
     needs:
-      - coverage
-    steps:
-      - name: Check out committed code
-        uses: actions/checkout@v5
-      - name: Prepare python
-        run: |
-          pip install uv
-          uv venv --seed venv
-          . venv/bin/activate
-          uv pip install toml
-      - name: Install required dependencies
-        run: |
-          apt-get update
-          apt-get install -y curl jq
-      - name: Check for existing package on TestPyPI
-        id: check_package
-        run: |
-          . venv/bin/activate
-          PACKAGE_VERSION=$(python -c "import toml; print(toml.load('pyproject.toml')['project']['version'])")
-          PACKAGE_NAME=$(python -c "import toml; print(toml.load('pyproject.toml')['project']['name'])")
-          echo "Checking for package: $PACKAGE_NAME==$PACKAGE_VERSION"
-
-          if curl -s "https://test.pypi.org/pypi/$PACKAGE_NAME/json" | jq -r '.releases | keys[]' | grep -q "^$PACKAGE_VERSION$"; then
-            echo "Package version already exists. Skipping upload."
-            echo "should_publish=false" >> $GITHUB_OUTPUT
-          else
-            echo "Package version does not exist. Proceeding with upload."
-            echo "should_publish=true" >> $GITHUB_OUTPUT
-          fi
-      - name: Build
-        if: steps.check_package.outputs.should_publish == 'true'
-        run: |
-          . venv/bin/activate
-          uv build
-      - name: Publish to TestPyPI
-        if: steps.check_package.outputs.should_publish == 'true'
-        run: |
-          . venv/bin/activate
-          uv publish --publish-url https://test.pypi.org/legacy/
+      - tests_and_coverage
+    uses: ${{ github.repository }}/.github/workflows/_testpypi.yml@${{ github.ref }}
+    with:
+      py-version: "3.13"
+    secrets: inherit
 
   release:
-    name: Publish a GitHub release
     needs:
-      - test-publishing
-    runs-on: ubuntu-latest
-    permissions:
-      contents: write
-    steps:
-      - uses: actions/checkout@v4
-      - name: Setup variables
-        id: vars
-        run: |
-            echo "tag=$(git describe --tags --abbrev=0)" >> $GITHUB_OUTPUT
-            echo "source=HEAD" >> $GITHUB_OUTPUT
-            echo "url=https://github.com/${{ github.repository }}/${{ github.event.repository.name }}" >> $GITHUB_OUTPUT
-      - name: Compute package name
-        id: package
-        run: |
-            echo "package=${{ github.event.repository.name }}-${{ steps.vars.outputs.tag }}" >> $GITHUB_OUTPUT
-      - name: Have a tar.gz
-        run: |
-          git archive --format tar.gz --prefix ${{ steps.package.outputs.package }}/ ${{ steps.vars.outputs.source }} > ${RUNNER_TEMP}/${{ steps.package.outputs.package }}.tar.gz
-          ls -l ${RUNNER_TEMP}/${{ steps.package.outputs.package }}.tar.gz
-          file ${RUNNER_TEMP}/${{ steps.package.outputs.package }}.tar.gz
-      - name: Check tar.gz
-        run: |
-          pwd
-          ls -l ${RUNNER_TEMP}/${{ steps.package.outputs.package }}.tar.gz
-          file ${RUNNER_TEMP}/${{ steps.package.outputs.package }}.tar.gz
-      - name: Have a zip
-        run: |
-          git archive --format zip --prefix ${{ steps.package.outputs.package }}/ ${{ steps.vars.outputs.source }} > ${RUNNER_TEMP}/${{ steps.package.outputs.package }}.zip
-      - name: Create release with gh
-        env:
-          GH_TOKEN: ${{ github.token }}
-          TAG: ${{ steps.vars.outputs.tag }}
-        run: |
-          gh release create "$TAG" --title "Release v$TAG" --generate-notes ../../_temp/${{ steps.package.outputs.package }}.tar.gz ../../_temp/${{ steps.package.outputs.package }}.zip
+      - testpypi
+      - complexity
+    if: ${{ needs.gate.result == 'success' }}
+    uses: ${{ github.repository }}/.github/workflows/_release.yml@${{ github.ref }}
+    # Optionally force a tag input; otherwise _release uses github.ref_name
+    with:
+      tag: ${{ github.ref_type == 'tag' && github.ref_name || '' }}
+    secrets: inherit
