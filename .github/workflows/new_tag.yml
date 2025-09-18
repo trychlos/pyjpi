@@ -183,14 +183,13 @@ jobs:
       - name: Setup variables
         id: vars
         run: |
-            echo "version=$(cat .VERSION)" >> $GITHUB_OUTPUT
             echo "tag=$(git describe --tags --abbrev=0)" >> $GITHUB_OUTPUT
             echo "source=HEAD" >> $GITHUB_OUTPUT
             echo "url=https://github.com/${{ github.repository }}/${{ github.event.repository.name }}" >> $GITHUB_OUTPUT
       - name: Compute package name
         id: package
         run: |
-            echo "package=${{ github.event.repository.name }}-${{ steps.vars.outputs.version }}" >> $GITHUB_OUTPUT
+            echo "package=${{ github.event.repository.name }}-${{ steps.vars.outputs.tag }}" >> $GITHUB_OUTPUT
       - name: Have a tar.gz
         run: |
           git archive --format tar.gz --prefix ${{ steps.package.outputs.package }}/ ${{ steps.vars.outputs.source }} > ${RUNNER_TEMP}/${{ steps.package.outputs.package }}.tar.gz
