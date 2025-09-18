@@ -33,6 +33,35 @@ jobs:
       - name: Run ShellCheck
         uses: ludeeus/action-shellcheck@master
 
+  pytest:
+    name: Run pytest using Python ${{ matrix.python-version }}
+    needs: gate
+    runs-on: ubuntu-latest
+    container: python:3.13-slim
+    strategy:
+      matrix:
+        python-version: ["3.13"]
+    steps:
+      - name: Check out committed code
+        uses: actions/checkout@v5
+      - name: Prepare python
+        run: |
+          pip install uv
+          uv venv --seed venv
+          . venv/bin/activate
+          uv pip install -r requirements.txt -r requirements-test.txt
+      - name: Run all tests
+        run: |
+          . venv/bin/activate
+          pytest --log-level info tests/ --cov='pyjpi/'
+      - name: Upload coverage artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-${{ matrix.python-version }}
+          path: .coverage
+          if-no-files-found: error
+          include-hidden-files: true
+
   coverage:
     name: Process test coverage
     needs: gate
