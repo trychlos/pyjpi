@@ -64,7 +64,7 @@ jobs:
 
   coverage:
     name: Process test coverage
-    needs: gate
+    needs: pytest
     runs-on: ubuntu-latest
     container: python:3.13-slim
     steps:
