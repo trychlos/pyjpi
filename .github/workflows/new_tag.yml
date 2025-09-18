@@ -50,6 +50,7 @@ jobs:
           uv venv --seed venv
           . venv/bin/activate
           uv pip install -r requirements.txt -r requirements-test.txt
+          uv pip install -e .
       - name: Run all tests
         run: |
           . venv/bin/activate
