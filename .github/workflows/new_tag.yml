@@ -3,7 +3,7 @@
 # 2) pytest + coverage (fail under 85)
 # 3) complexity (radon)
 # 4) publish to TestPyPI (skips if version exists)
-# 5) at last create a GitHub release with source archives
+# 5) create a GitHub release with source archives
 
 name: New tag
 
