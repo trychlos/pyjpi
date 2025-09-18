@@ -1,0 +1,25 @@
+name: _complexity
+on:
+  workflow_call:
+    inputs:
+      py-version:
+        type: string
+        default: "3.13"
+
+jobs:
+  complexity:
+    runs-on: ubuntu-latest
+    container: python:${{ inputs.py-version }}-slim
+    steps:
+      - uses: actions/checkout@v5
+      - name: Prepare python
+        run: |
+          pip install uv
+          uv venv --seed venv
+          . venv/bin/activate
+          uv pip install -r requirements.txt -r requirements-test.txt
+      - name: Radon complexity
+        run: |
+          . venv/bin/activate
+          echo "Showing complexity higher or equal to 'C'"
+          radon cc pyjpi/ tests/ -s -nc --no-assert
