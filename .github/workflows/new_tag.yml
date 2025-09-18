@@ -1,74 +1,211 @@
-# This Github action is triggered when a new (non release-candidate, aka not '-rc') tag is pushed in master branch:
-# - compute tests coverage
-# - compute code complexity
-# - publishes the library on test.pypi
-# - at last, define a new Github release.
-# .github/workflows/new_tag.yml
+# This workflow runs when a new (non-rc) tag is pushed:
+# 1) shellcheck
+# 2) pytest + coverage (fail under 85)
+# 3) complexity (radon)
+# 4) publish to TestPyPI (skips if version exists)
+# 5) create a GitHub release with source archives
+
 name: New tag
 
 on:
   workflow_dispatch:
   push:
     tags:
-      - '*'                   # or 'v*' per your scheme
+      - '*'               # run on any new tag
 
 concurrency:
   group: new-tag-${{ github.ref }}
   cancel-in-progress: true
 
+env:
+  VENV: venv
+
 jobs:
   gate:
-    # allow manual runs, or tag pushes that are NOT '-rc'
+    # allow manual runs OR tag pushes that are NOT '-rc'
     if: ${{ github.event_name == 'workflow_dispatch' || (startsWith(github.ref, 'refs/tags/') && !contains(github.ref_name, '-rc')) }}
     runs-on: ubuntu-latest
     steps:
-      - name: Display the result
+      - name: Gate
         run: echo "gate passed: ${{ github.ref_name }}"
 
   shellcheck:
+    name: Shellcheck
     needs:
       - gate
-    # run only if gate succeeded
     if: ${{ needs.gate.result == 'success' }}
-    uses: ${{ github.repository }}/.github/workflows/_shellcheck.yml@master
-    secrets: inherit
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out committed code
+        uses: actions/checkout@v5
+      - name: Run ShellCheck
+        uses: ludeeus/action-shellcheck@master
 
-  tests_and_coverage:
+  pytest:
+    name: Run pytest on Python 3.13
     needs:
-      shellcheck
-    if: ${{ needs.gate.result == 'success' }}
-    uses: ${{ github.repository }}/.github/workflows/_pytest_coverage.yml@master
-    with:
-      py-version: "3.13"
-      min-coverage: 85
-    secrets:
-      codecov-token: ${{ secrets.CODECOV_TOKEN }}
+      - gate
+    if: ${{ needs.shellcheck.result == 'success' }}
+    runs-on: ubuntu-latest
+    container: python:3.13-slim
+    steps:
+      - uses: actions/checkout@v5
+      - name: Prepare Python
+        run: |
+          pip install -q uv
+          uv venv --seed $VENV
+          . $VENV/bin/activate
+          uv pip install -r requirements.txt -r requirements-test.txt
+          uv pip install -e .
+      - name: Run tests with coverage
+        run: |
+          . $VENV/bin/activate
+          pytest --log-level info tests/ --cov='pyjpi/'
+      - name: Upload coverage artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-3.13
+          path: .coverage
+          if-no-files-found: error
+          include-hidden-files: true
+
+  coverage:
+    name: Process tests coverage
+    needs:
+      - pytest
+    if: ${{ needs.pytest.result == 'success' }}
+    runs-on: ubuntu-latest
+    container: python:3.13-slim
+    steps:
+      - name: Check out committed code
+        uses: actions/checkout@v5
+      - name: Prepare Python
+        run: |
+          pip install -q uv
+          uv venv --seed $VENV
+          . $VENV/bin/activate
+          uv pip install -r requirements.txt -r requirements-test.txt
+      - name: Download coverage artifact
+        uses: actions/download-artifact@v5
+        with:
+          name: coverage-3.13
+          path: ${{ github.workspace }}/artifacts
+      - name: Combine & check
+        run: |
+          . $VENV/bin/activate
+          coverage combine artifacts/.coverage*
+          coverage report --fail-under=85
+          coverage xml
+      - name: Install deps for Codecov
+        run: |
+          apt-get update
+          apt-get install -y git curl gnupg ca-certificates
+      - name: Upload to Codecov
+        if: ${{ secrets.CODECOV_TOKEN != '' }}
+        uses: codecov/codecov-action@v5
+        env:
+          CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
+          slug: trychlos/pyjpi
 
   complexity:
+    name: Complexity (radon)
     needs:
-      - tests_and_coverage
-    if: ${{ needs.tests_and_coverage.result == 'success' }}
-    uses: ${{ github.repository }}/.github/workflows/_complexity.yml@master
-    with:
-      py-version: "3.13"
-    secrets: inherit
+      - pytest
+    if: ${{ needs.coverage.result == 'success' }}
+    runs-on: ubuntu-latest
+    container: python:3.13-slim
+    steps:
+      - name: Check out committed code
+        uses: actions/checkout@v5
+      - name: Prepare Python
+        run: |
+          pip install -q uv
+          uv venv --seed $VENV
+          . $VENV/bin/activate
+          uv pip install -r requirements.txt -r requirements-test.txt
+      - name: Radon complexity
+        run: |
+          . $VENV/bin/activate
+          echo "Showing complexity ≥ 'C'"
+          radon cc pyjpi/ tests/ -s -nc --no-assert
 
-  testpypi:
+  test-publishing:
+    name: Build & publish to TestPyPI (skip if exists)
     needs:
-      - tests_and_coverage
-    if: ${{ needs.tests_and_coverage.result == 'success' }}
-    uses: ${{ github.repository }}/.github/workflows/_testpypi.yml@master
-    with:
-      py-version: "3.13"
-    secrets: inherit
+      - coverage
+      - complexity
+    if: ${{ needs.coverage.result == 'success' }}
+    runs-on: ubuntu-latest
+    container: python:3.13-slim
+    environment: testpypi
+    permissions:
+      id-token: write
+    steps:
+      - name: Check out committed code
+        uses: actions/checkout@v5
+      - name: Prepare Python
+        run: |
+          pip install -q uv
+          uv venv --seed $VENV
+          . $VENV/bin/activate
+          uv pip install toml
+      - name: Install curl/jq
+        run: |
+          apt-get update
+          apt-get install -y curl jq
+      - name: Check if version exists on TestPyPI
+        id: check
+        run: |
+          . $VENV/bin/activate
+          PACKAGE_VERSION=$(python -c "import toml; print(toml.load('pyproject.toml')['project']['version'])")
+          PACKAGE_NAME=$(python -c "import toml; print(toml.load('pyproject.toml')['project']['name'])")
+          echo "Checking: $PACKAGE_NAME==$PACKAGE_VERSION"
+          if curl -s "https://test.pypi.org/pypi/$PACKAGE_NAME/json" | jq -r '.releases | keys[]' | grep -q "^$PACKAGE_VERSION$"; then
+            echo "should_publish=false" >> $GITHUB_OUTPUT
+          else
+            echo "should_publish=true" >> $GITHUB_OUTPUT
+          fi
+      - name: Build
+        if: steps.check.outputs.should_publish == 'true'
+        run: |
+          . $VENV/bin/activate
+          uv build
+      - name: Publish to TestPyPI
+        if: steps.check.outputs.should_publish == 'true'
+        run: |
+          . $VENV/bin/activate
+          uv publish --publish-url https://test.pypi.org/legacy/
 
   release:
+    name: Publish GitHub Release
     needs:
-      - testpypi
-      - complexity
-    if: ${{ needs.gate.result == 'success' && needs.testpypi.result == 'success' && needs.complexity.result == 'success' }}
-    uses: ${{ github.repository }}/.github/workflows/_release.yml@master
-    with:
-      # _release defaults to github.ref_name; pass explicitly if you want
-      tag: ${{ github.ref_type == 'tag' && github.ref_name || '' }}
-    secrets: inherit
+      - test-publishing
+    if: ${{ needs.test-publishing.result == 'success' && needs.complexity.result == 'success' }}
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Check out committed code
+        uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+      - name: Vars (tag & package name)
+        id: vars
+        run: |
+          echo "tag=${GITHUB_REF_NAME}" >> $GITHUB_OUTPUT
+          echo "pkg=${{ github.event.repository.name }}-${GITHUB_REF_NAME}" >> $GITHUB_OUTPUT
+      - name: Create source archives
+        run: |
+          git archive --format tar.gz --prefix ${{ steps.vars.outputs.pkg }}/ HEAD > ${RUNNER_TEMP}/${{ steps.vars.outputs.pkg }}.tar.gz
+          git archive --format zip     --prefix ${{ steps.vars.outputs.pkg }}/ HEAD > ${RUNNER_TEMP}/${{ steps.vars.outputs.pkg }}.zip
+          ls -l ${RUNNER_TEMP}/${{ steps.vars.outputs.pkg }}.*
+      - name: Create GitHub release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ steps.vars.outputs.tag }}
+        run: |
+          gh release create "$TAG" \
+            --title "Release v$TAG" \
+            --generate-notes \
+            ${RUNNER_TEMP}/${{ steps.vars.outputs.pkg }}.tar.gz \
+            ${RUNNER_TEMP}/${{ steps.vars.outputs.pkg }}.zip
