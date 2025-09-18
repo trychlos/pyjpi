@@ -25,7 +25,8 @@ jobs:
 
   shellcheck:
     name: Shellcheck
-    needs: gate
+    needs:
+      - gate
     runs-on: ubuntu-latest
     steps:
       - name: Check out committed code
@@ -35,7 +36,8 @@ jobs:
 
   pytest:
     name: Run pytest using Python ${{ matrix.python-version }}
-    needs: gate
+    needs:
+      - gate
     runs-on: ubuntu-latest
     container: python:3.13-slim
     strategy:
@@ -65,7 +67,8 @@ jobs:
 
   coverage:
     name: Process test coverage
-    needs: pytest
+    needs:
+      - pytest
     runs-on: ubuntu-latest
     container: python:3.13-slim
     steps:
@@ -98,3 +101,68 @@ jobs:
         env:
           CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
           slug: trychlos/pyjpi
+
+  complexity:
+    name: Process test complexity
+    runs-on: ubuntu-latest
+    container: python:3.13-slim
+    needs:
+      - coverage
+    steps:
+      - name: Check out committed code
+        uses: actions/checkout@v5
+      - name: Prepare python
+        run: |
+          pip install uv
+          uv venv --seed venv
+          . venv/bin/activate
+          uv pip install -r requirements.txt -r requirements-test.txt
+      - name: Run complexity report (click to view details)
+        run: |
+          . venv/bin/activate
+          echo "Showing complexity higher or equal to 'C'"
+          radon cc pyjpi/ tests/ -s -nc --no-assert
+
+  test-publishing:
+    name: Build and publish to TestPyPI
+    runs-on: ubuntu-latest
+    container: python:3.13-slim
+    environment: testpypi
+    permissions:
+        id-token: write
+    needs:
+      - coverage
+    steps:
+      - name: Check out committed code
+        uses: actions/checkout@v5
+      - name: Prepare python
+        run: |
+          pip install uv
+          uv venv --seed venv
+          . venv/bin/activate
+          uv pip install toml
+      - name: Check for existing package on TestPyPI
+        id: check_package
+        run: |
+          . venv/bin/activate
+          PACKAGE_VERSION=$(python -c "import toml; print(toml.load('pyproject.toml')['project']['version'])")
+          PACKAGE_NAME=$(python -c "import toml; print(toml.load('pyproject.toml')['project']['name'])")
+          echo "Checking for package: $PACKAGE_NAME==$PACKAGE_VERSION"
+
+          if curl -s "https://test.pypi.org/pypi/$PACKAGE_NAME/json" | jq -r '.releases | keys[]' | grep -q "^$PACKAGE_VERSION$"; then
+            echo "Package version already exists. Skipping upload."
+            echo "should_publish=false" >> $GITHUB_OUTPUT
+          else
+            echo "Package version does not exist. Proceeding with upload."
+            echo "should_publish=true" >> $GITHUB_OUTPUT
+          fi
+      - name: Build
+        if: steps.check_package.outputs.should_publish == 'true'
+        run: |
+          . venv/bin/activate
+          uv build
+      - name: Publish to TestPyPI
+        if: steps.check_package.outputs.should_publish == 'true'
+        run: |
+          . venv/bin/activate
+          uv publish --publish-url https://test.pypi.org/legacy/
