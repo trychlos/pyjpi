@@ -10,17 +10,20 @@ from __future__ import annotations
 from datetime import datetime
 import logging
 
-class JPILibrary():
+from aiohttp.web import HTTPError
+
+
+class JPILibrary:
     """Class for the pyJPI library."""
 
-    def __init__( self, session, version ):
+    def __init__(self, session, version):
         """Initialize a HTTP session."""
         self._session = session
         self._initialized = datetime.now()
-        self._log = logging.getLogger( __name__ )
-        self._log.debug( f"JPILibrary v{version} successfully instanciated" )
+        self._log = logging.getLogger(__name__)
+        self._log.debug("JPILibrary v%s successfully instantiated", version)
 
-    def _batt_parse_text( self, text: str ) -> dict:
+    def _batt_parse_text(self, text: str) -> dict:
         """
         Parse battery info text into a structured dictionary.
         Input:
@@ -37,7 +40,7 @@ class JPILibrary():
             key, value = line.split(":", 1)
             key = key.strip()
             value = value.strip()
-    
+
             if key == "Niveau":
                 result["level"] = int(value.strip("%"))
             elif key == "En charge":
@@ -46,7 +49,7 @@ class JPILibrary():
                 result["power"] = value.upper() == "OUI"
         return result
 
-    async def battInfo( self, url: str ):
+    async def battInfo(self, url: str):
         """
         Returns the battery informations as a hash:
             level: <int>
@@ -54,27 +57,27 @@ class JPILibrary():
             power: <bool>
         """
         target = f"{url}?action=battInfo"
-        resp = await self.get( target )
+        resp = await self.get(target)
         result = None
-        self._log.debug( f"battInfo resp={resp}" )
+        self._log.debug("battInfo resp=%s", resp)
         if resp:
-            result = self._batt_parse_text( resp['text'] )
+            result = self._batt_parse_text(resp["text"])
         return result
 
-    async def getDeviceName( self, url: str ):
+    async def getDeviceName(self, url: str):
         """
         Returns the device name as provided by the manufacturer.
         E.g. Samsung sets that as 'Samsung SM-J320FN' for a Galaxy J3.
         """
         target = f"{url}?action=getDeviceName"
-        resp = await self.get( target )
-        self._log.debug( f"getDeviceName resp={resp}" )
+        resp = await self.get(target)
+        self._log.debug("getDeviceName resp=%s", resp)
         device_name = None
         if resp:
-            device_name = resp['text']
+            device_name = resp["text"]
         return device_name
 
-    async def get( self, url: str ):
+    async def get(self, url: str):
         """
         Returns an object containing the raw HTTP response from GETting the provided url plus the got text content.
         Uses async I/O to avoid blocking the main event loop.
@@ -83,12 +86,11 @@ class JPILibrary():
         resp = None
         result = None
         try:
-            resp = await self._session.get( url )
-        except Exception as e:
-            self._log.error( f"HTTP Error url='{url}' status={resp.status}" ) if resp else self._log.error( f"Unknown HTTP Error url='{url}'" )
+            resp = await self._session.get(url)
+        except HTTPError as e:
+            self._log.error("HTTPError exception: %s", e)
             return False
         if resp:
             text = await resp.text()
-            result = { "text": text, "resp": resp }
+            result = {"text": text, "resp": resp}
         return result
-

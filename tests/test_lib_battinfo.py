@@ -1,22 +1,33 @@
 """Tests for JPILibrary methods."""
 
-import pytest
 from unittest.mock import AsyncMock, MagicMock
+
+import pytest
 
 from pyjpi import jpiInit
 
 from .const import URL
 
+
 @pytest.mark.asyncio
 async def test_battInfo_parses_and_returns_expected_dict():
+    """Test for 'action=battInfo' query."""
+
     class FakeResp:
+        """Fake response context manager."""
+
         status = 200
-        def raise_for_status(self):
+
+        def raise_for_status(self):  # pylint: disable=C0116
             return None
+
         async def text(self):
+            """Returns a fake (but with the expected format) answer."""
             return "Niveau: 87%\nEn charge: OUI\nAlim. connectée: NON"
+
         async def __aenter__(self):
             return self
+
         async def __aexit__(self, *exc):
             return None
 
@@ -25,7 +36,7 @@ async def test_battInfo_parses_and_returns_expected_dict():
 
     lib = await jpiInit(session)
 
-    info = await lib.battInfo( URL )
+    info = await lib.battInfo(URL)
 
     assert isinstance(info, dict)
     assert set(info.keys()) == {"level", "charging", "power"}

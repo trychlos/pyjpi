@@ -1,17 +1,14 @@
-<div align="center">
-<h1>pyJPI</h1>
-<p>An asynchronous Python module to interact with Android devices running JPI.</p>
-</div>
+# pyJPI - An asynchronous Python module to interact with Android devices running JPI
 
 [![Maintenance](https://img.shields.io/badge/Maintained%3F-yes-green.svg)](https://github.com/trychlos/pyjpi)
+[![Latest release](https://github.com/compatech/pyjpi/workflows/Latest%20release/badge.svg)](https://github.com/compatech/pyjpi/actions)
+[![Newest commit](https://github.com/compatech/pyjpi/workflows/Latest%20commit/badge.svg)](https://github.com/compatech/pyjpi/actions)
+
+[![PyPI version fury.io](https://badge.fury.io/py/pyjpi.svg)](https://pypi.python.org/pypi/pyjpi/)
 
 <!--
 [![CodeRabbit.ai is Awesome](https://img.shields.io/badge/AI-orange?label=CodeRabbit&color=orange&link=https%3A%2F%2Fcoderabbit.ai)](https://coderabbit.ai)
 [![renovate maintained](https://img.shields.io/badge/maintained%20with-renovate-blue?logo=renovatebot)](https://github.com/compatech/python-airos/issues/8)
-
-[![PyPI version fury.io](https://badge.fury.io/py/airos.svg)](https://pypi.python.org/pypi/airos/)
-[![Latest release](https://github.com/compatech/python-airos/workflows/Latest%20release/badge.svg)](https://github.com/compatech/python-airos/actions)
-[![Newest commit](https://github.com/compatech/python-airos/workflows/Latest%20commit/badge.svg)](https://github.com/compatech/python-airos/actions)
 
 [![CodeFactor](https://www.codefactor.io/repository/github/compatech/python-airos/badge)](https://www.codefactor.io/repository/github/plugwise/python-airos)
 [![codecov](https://codecov.io/gh/compatech/python-airos/graph/badge.svg?token=WI5K2IZWNS)](https://codecov.io/gh/compatech/python-airos)
@@ -21,13 +18,14 @@
 [![Code Smells](https://sonarcloud.io/api/project_badges/measure?project=CoMPaTech_python-airos&metric=code_smells)](https://sonarcloud.io/summary/new_code?id=CoMPaTech_python-airos)
 -->
 
-# Overview
+## Overview
 
 `pyJPI` is an asynchronous Python library designed to programmatically interact with Android devices running JPI.
 
 This library is a key component for an in-the-way potential future core integration with [Home Assistant](https://www.home-assistant.io).
 
-More details on the integration can be found on the [JPI](https://www.home-assistant.io/integrations/jpi/) page. To add JPI directly feel free to use the button below:
+More details on the integration can be found on the [JPI](https://www.home-assistant.io/integrations/jpi/) page. To add JPI directly feel free to use the button
+below:
 
 [![Open your Home Assistant instance and show your integrations.](https://my.home-assistant.io/badges/config_flow_start.svg)](https://my.home-assistant.io/redirect/_change/?redirect=config_flow_start%2F%3Fdomain%3Djpi)
 
@@ -35,6 +33,7 @@ More details on the integration can be found on the [JPI](https://www.home-assis
 
 - Asynchronous operations are built with ``aiohttp` for non-blocking I/O, which is perfect for integrations and background tasks.
 - API: `battInfo`
+- API: `get`
 - API: `getDeviceName`
 
 ## Installation
@@ -69,11 +68,11 @@ async def main():
     # Then just has to call the library functions.
     try:
         res = await handle.get( url )
-        # returns an object { resp: ClientResponse, text: str } or False
+        # returns a dict { resp: ClientResponse, text: str } or False
         res = await handle.getDeviceName( url )
         # returns the device name as set by the manufacturer (a single string) or False
         res = await handle.battInfo( url )
-        # returns an object { level: integer, charging: bool, power: bool }
+        # returns a dict { level: integer, charging: bool, power: bool }
 
 
 if __name__ == "__main__":
@@ -94,7 +93,7 @@ Returns a handle on it.
 
 The class which manages the devices accesses.
 
-## Avaliable `JPILibrary` method
+## Available `JPILibrary` methods
 
 - `async get( url: str) -> dict`:
 
@@ -102,8 +101,10 @@ Runs a HTTP GET method on the specified URL.
 
 Returns a dict with:
 
-    - resp: the `aiohttp.ClientResponse`
-    - text: the resp.text() content
+```Python
+    resp: the `aiohttp.ClientResponse`
+    text: the resp.text() content
+```
 
 - `async getDeviceName( url: str) -> str`:
 
@@ -117,13 +118,15 @@ Runs a HTTP GET method on on f"{url}?action=battInfo" url.
 
 Returns a dict with:
 
-    - level: an integer with the current battery level in %
-    - charging: a boolean which says if the battery is currently charging
-    - power: a boolean which says if the power is on on the device.
+```Python
+    level: an integer with the current battery level in %
+    charging: a boolean which says if the battery is currently charging
+    power: a boolean which says if the power is on on the device.
+```
 
 ## Contributing
 
-We welcome contributions as well as additional codeowners to pyjpi.
+We welcome contributions as well as additional codeowners to `pyjpi`.
 
 ## Issues & help
 
