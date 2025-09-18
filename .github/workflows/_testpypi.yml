@@ -1,17 +1,6 @@
 name: _testpypi
 on:
-  workflow_call:
-    inputs:
-      py-version:
-        type: string
-        default: "3.13"
-    secrets:
-      pypi-token:    # not needed for TestPyPI with OIDC, keep for flexibility
-        required: false
-    outputs:
-      should_publish:
-        description: "Whether we actually published"
-        value: ${{ jobs.testpypi.outputs.should_publish }}
+  workflow_call: {}
 
 jobs:
   testpypi:
