@@ -1,13 +1,6 @@
 name: _release
 on:
-  workflow_call:
-    inputs:
-      tag:
-        type: string
-        required: false
-    outputs:
-      tag:
-        value: ${{ jobs.release.outputs.tag }}
+  workflow_call: {}
 
 jobs:
   release:
