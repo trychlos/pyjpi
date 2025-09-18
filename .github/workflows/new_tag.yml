@@ -207,6 +207,6 @@ jobs:
       - name: Create release with gh
         env:
           GH_TOKEN: ${{ github.token }}
-          TAG: ${{ needs.new_tag.outputs.tag }}
+          TAG: ${{ steps.vars.outputs.tag }}
         run: |
           gh release create "$TAG" --title "Release v$TAG" --generate-notes ../../_temp/${{ steps.package.outputs.package }}.tar.gz ../../_temp/${{ steps.package.outputs.package }}.zip
