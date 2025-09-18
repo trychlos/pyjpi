@@ -170,3 +170,26 @@ jobs:
         run: |
           . venv/bin/activate
           uv publish --publish-url https://test.pypi.org/legacy/
+
+  release:
+    name: Publish a GitHub release
+    needs:
+      - test-publishing
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+        with: { fetch-depth: 0 }
+      - uses: actions/download-artifact@v4
+        with:
+          name: dist
+          path: dist
+      - name: Create release with gh
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ needs.new_tag.outputs.tag }}
+        run: |
+          # Optional notes file if you have one
+          if [ -f CHANGELOG.md ]; then NOTES="--notes-file CHANGELOG.md"; else NOTES="--generate-notes"; fi
+          gh release create "$TAG" dist/** --title "Release $TAG" --generate-notes
