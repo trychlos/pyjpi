@@ -122,7 +122,6 @@ jobs:
           apt-get update
           apt-get install -y git curl gnupg ca-certificates
       - name: Upload to Codecov
-        if: "${{ secrets.CODECOV_TOKEN != '' }}"
         uses: codecov/codecov-action@v5
         env:
           CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
