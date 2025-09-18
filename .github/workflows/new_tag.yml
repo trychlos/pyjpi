@@ -180,16 +180,33 @@ jobs:
       contents: write
     steps:
       - uses: actions/checkout@v4
-        with: { fetch-depth: 0 }
-      - uses: actions/download-artifact@v4
-        with:
-          name: dist
-          path: dist
+      - name: Setup variables
+        id: vars
+        run: |
+            echo "version=$(cat .VERSION)" >> $GITHUB_OUTPUT
+            echo "tag=$(git describe --tags --abbrev=0)" >> $GITHUB_OUTPUT
+            echo "source=HEAD" >> $GITHUB_OUTPUT
+            echo "url=https://github.com/${{ github.repository }}/${{ github.event.repository.name }}" >> $GITHUB_OUTPUT
+      - name: Compute package name
+        id: package
+        run: |
+            echo "package=${{ github.event.repository.name }}-${{ steps.vars.outputs.version }}" >> $GITHUB_OUTPUT
+      - name: Have a tar.gz
+        run: |
+          git archive --format tar.gz --prefix ${{ steps.package.outputs.package }}/ ${{ steps.vars.outputs.source }} > ${RUNNER_TEMP}/${{ steps.package.outputs.package }}.tar.gz
+          ls -l ${RUNNER_TEMP}/${{ steps.package.outputs.package }}.tar.gz
+          file ${RUNNER_TEMP}/${{ steps.package.outputs.package }}.tar.gz
+      - name: Check tar.gz
+        run: |
+          pwd
+          ls -l ${RUNNER_TEMP}/${{ steps.package.outputs.package }}.tar.gz
+          file ${RUNNER_TEMP}/${{ steps.package.outputs.package }}.tar.gz
+      - name: Have a zip
+        run: |
+          git archive --format zip --prefix ${{ steps.package.outputs.package }}/ ${{ steps.vars.outputs.source }} > ${RUNNER_TEMP}/${{ steps.package.outputs.package }}.zip
       - name: Create release with gh
         env:
           GH_TOKEN: ${{ github.token }}
           TAG: ${{ needs.new_tag.outputs.tag }}
         run: |
-          # Optional notes file if you have one
-          if [ -f CHANGELOG.md ]; then NOTES="--notes-file CHANGELOG.md"; else NOTES="--generate-notes"; fi
-          gh release create "$TAG" dist/** --title "Release $TAG" --generate-notes
+          gh release create "$TAG" --title "Release v$TAG" --generate-notes ../../_temp/${{ steps.package.outputs.package }}.tar.gz ../../_temp/${{ steps.package.outputs.package }}.zip
