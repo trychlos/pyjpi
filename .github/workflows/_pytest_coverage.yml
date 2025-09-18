@@ -1,16 +1,6 @@
 name: _pytest_coverage
 on:
-  workflow_call:
-    inputs:
-      py-version:
-        type: string
-        default: "3.13"
-      min-coverage:
-        type: number
-        default: 85
-    secrets:
-      codecov-token:
-        required: false
+  workflow_call: {}
 
 jobs:
   pytest:
