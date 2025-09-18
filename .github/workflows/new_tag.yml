@@ -48,7 +48,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Gate
-        run: echo "gate passed: ${{ github.ref_name }}"
+        run: 'echo "gate passed: ${{ github.ref_name }}"'
 
   shellcheck:
     name: Shellcheck
