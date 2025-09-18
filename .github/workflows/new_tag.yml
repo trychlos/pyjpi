@@ -3,30 +3,41 @@
 # - compute code complexity
 # - publishes the library on test.pypi
 # - at last, define a new Github release.
+# .github/workflows/new_tag.yml
 name: New tag
 
 on:
   workflow_dispatch:
-  create:
+  push:
+    tags:
+      - '*'                   # or 'v*' per your scheme
+
+concurrency:
+  group: new-tag-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
   gate:
+    # allow manual runs, or tag pushes that are NOT '-rc'
     if: ${{ github.event_name == 'workflow_dispatch' || (startsWith(github.ref, 'refs/tags/') && !contains(github.ref_name, '-rc')) }}
     runs-on: ubuntu-latest
     steps:
-      - run: echo "gate passed"
+      - name: Display the result
+        run: echo "gate passed: ${{ github.ref_name }}"
 
   shellcheck:
-    if: ${{ always() && needs.gate.result == 'success' }}
     needs:
       - gate
-    uses: ${{ github.repository }}/.github/workflows/_shellcheck.yml@${{ github.ref }}
+    # run only if gate succeeded
+    if: ${{ needs.gate.result == 'success' }}
+    uses: ${{ github.repository }}/.github/workflows/_shellcheck.yml@master
     secrets: inherit
 
   tests_and_coverage:
     needs:
-      - gate
-    uses: ${{ github.repository }}/.github/workflows/_pytest_coverage.yml@${{ github.ref }}
+      shellcheck
+    if: ${{ needs.gate.result == 'success' }}
+    uses: ${{ github.repository }}/.github/workflows/_pytest_coverage.yml@master
     with:
       py-version: "3.13"
       min-coverage: 85
@@ -36,7 +47,8 @@ jobs:
   complexity:
     needs:
       - tests_and_coverage
-    uses: ${{ github.repository }}/.github/workflows/_complexity.yml@${{ github.ref }}
+    if: ${{ needs.tests_and_coverage.result == 'success' }}
+    uses: ${{ github.repository }}/.github/workflows/_complexity.yml@master
     with:
       py-version: "3.13"
     secrets: inherit
@@ -44,7 +56,8 @@ jobs:
   testpypi:
     needs:
       - tests_and_coverage
-    uses: ${{ github.repository }}/.github/workflows/_testpypi.yml@${{ github.ref }}
+    if: ${{ needs.tests_and_coverage.result == 'success' }}
+    uses: ${{ github.repository }}/.github/workflows/_testpypi.yml@master
     with:
       py-version: "3.13"
     secrets: inherit
@@ -53,9 +66,9 @@ jobs:
     needs:
       - testpypi
       - complexity
-    if: ${{ needs.gate.result == 'success' }}
-    uses: ${{ github.repository }}/.github/workflows/_release.yml@${{ github.ref }}
-    # Optionally force a tag input; otherwise _release uses github.ref_name
+    if: ${{ needs.gate.result == 'success' && needs.testpypi.result == 'success' && needs.complexity.result == 'success' }}
+    uses: ${{ github.repository }}/.github/workflows/_release.yml@master
     with:
+      # _release defaults to github.ref_name; pass explicitly if you want
       tag: ${{ github.ref_type == 'tag' && github.ref_name || '' }}
     secrets: inherit
