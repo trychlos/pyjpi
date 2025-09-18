@@ -22,7 +22,7 @@
 
 `pyJPI` is an asynchronous Python library designed to programmatically interact with Android devices running JPI.
 
-This library is a key component for an in-the-way potential future core integration with [Home Assistant](https://www.home-assistant.io).
+This library is a key component for a core integration with [Home Assistant](https://www.home-assistant.io).
 
 More details on the integration can be found on the [JPI](https://www.home-assistant.io/integrations/jpi/) page. To add JPI directly feel free to use the button
 below:

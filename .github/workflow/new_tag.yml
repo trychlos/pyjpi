@@ -1,0 +1,65 @@
+# This Github action is triggered when a new (non release-candidate, aka not '-rc') tag is pushed in master branch:
+# - define a new Github release
+# - compute tests coverage
+# - compute code complexity
+# - publishes the library on test.pypi
+# - publishes the library on pypi.
+
+name: New tag
+
+env:
+  CACHE_VERSION: 1
+  DEFAULT_PYTHON: "3.13"
+  PRE_COMMIT_HOME: ~/.cache/pre-commit
+  VENV: venv
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - master
+    tags-ignore:
+      - '*-rc*'
+
+jobs:
+  shellcheck:
+    name: Shellcheck
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out committed code
+        uses: actions/checkout@v5
+      - name: Run ShellCheck
+        uses: ludeeus/action-shellcheck@master
+  coverage:
+    name: Process test coverage
+    runs-on: ubuntu-latest
+    needs:
+      - ruff
+      - pytest
+      - mypy
+    steps:
+      - name: Check out committed code
+        uses: actions/checkout@v5
+      - name: Prepare python
+        run: |
+          pip install uv
+          uv venv --seed venv
+          . venv/bin/activate
+          uv pip install -r requirements.txt -r requirements-test.txt
+      - name: Download all coverage artifacts
+        uses: actions/download-artifact@v5
+        with:
+          pattern: coverage-*
+          merge-multiple: true
+          path: ${{ github.workspace }}/artifacts
+      - name: Combine coverage results
+        run: |
+          . venv/bin/activate
+          coverage combine artifacts/.coverage*
+          coverage report --fail-under=85
+          coverage xml
+      - name: Upload coverage to Codecov
+        uses: codecov/codecov-action@v5
+        env:
+          CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
+          slug: trychlos/pyjpi
