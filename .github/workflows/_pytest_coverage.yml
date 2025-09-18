@@ -1,5 +1,4 @@
 name: _pytest_coverage
-
 on:
   workflow_call:
     inputs:
