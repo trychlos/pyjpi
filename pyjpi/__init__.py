@@ -3,11 +3,19 @@
 from __future__ import annotations
 
 import asyncio
-import importlib.metadata
+from importlib.metadata import PackageNotFoundError, version
 
 import aiohttp
 
 from .library import JPILibrary
+
+
+async def _get_version() -> str:
+    """Returns the version of the package (hopefully)."""
+    try:
+        return await asyncio.to_thread(version, "pyJPI")
+    except PackageNotFoundError:
+        return "0+local"
 
 
 async def jpiInit(session: aiohttp.ClientSession) -> JPILibrary:
@@ -16,5 +24,5 @@ async def jpiInit(session: aiohttp.ClientSession) -> JPILibrary:
     Returns an object with an initialized HTTP session.
     This same object will have to be provided later on each called method.
     """
-    version = await asyncio.to_thread(importlib.metadata.version, "pyJPI")
-    return JPILibrary(session, version)
+    package_version = await _get_version()
+    return JPILibrary(session, package_version)

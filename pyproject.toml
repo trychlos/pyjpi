@@ -21,3 +21,6 @@ license-files = ["LICEN[CS]E*"]
 [project.urls]
 Homepage = "https://github.com/trychlos/pyjpi"
 Issues = "https://github.com/trychlos/pyjpi/issues"
+
+[tool.setuptools_scm]
+write_to = "pyjpi/._version_.py"
