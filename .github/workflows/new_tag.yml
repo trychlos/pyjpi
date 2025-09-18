@@ -89,6 +89,10 @@ jobs:
           coverage combine artifacts/.coverage*
           coverage report --fail-under=85
           coverage xml
+      - name: Install required dependencies
+        run: |
+          apt-get update
+          apt-get install -y git curl gnupg ca-certificates
       - name: Upload coverage to Codecov
         uses: codecov/codecov-action@v5
         env:
