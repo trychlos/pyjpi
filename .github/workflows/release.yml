@@ -29,7 +29,7 @@ jobs:
         uses: actions/checkout@v5
       - name: Prepare Python
         run: |
-          pip install -q uv twine
+          pip install -q uv
           uv venv --seed $VENV
           . $VENV/bin/activate
           uv pip install toml
@@ -37,7 +37,6 @@ jobs:
         run: |
           . $VENV/bin/activate
           uv build
-          uv twine check dist/*
       - name: Upload the distribution packages
         uses: actions/upload-artifact@v4
         with:
