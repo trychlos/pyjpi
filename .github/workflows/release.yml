@@ -1,0 +1,32 @@
+# This Github action is triggered when a new release is defined:
+# - run tests, compute coverage and complexity
+# - publishes the library on pypi.
+
+name: New release
+
+env:
+  VENV: venv
+
+on:
+  workflow_dispatch:
+  release:
+    types: [created]
+
+jobs:
+  tests:
+    uses: ./.github/workflows/_tests.yml
+    secrets:
+      codecov_token: "${{ secrets.CODECOV_TOKEN }}"
+
+  publishing:
+    name: Build and publish to PyPI
+    runs-on: ubuntu-latest
+    container: python:3.13-slim
+    environment: pypi
+    permissions:
+        id-token: write
+    needs:
+      - tests
+    steps:
+      - name: upload release to PyPI
+        uses: pypa/gh-action-pypi-publish@release/v1
