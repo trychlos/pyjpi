@@ -27,3 +27,12 @@ jobs:
       - name: Gate
         run: |
           echo "gate passed: ${{ github.ref_type }}='${{ github.ref_name }}'"
+
+  tests:
+    # run tests and compute coverage and complexity
+    needs:
+      - gate
+    uses: ./.github/workflows/_tests.yml
+    with:
+      container: $CONTAINER
+      codecov_token: ${{ secrets.CODECOV_TOKEN }}
