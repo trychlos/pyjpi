@@ -1,6 +1,7 @@
 # This Github action is triggered when a new release is defined:
 # - run tests, compute coverage and complexity
 # - publishes the library on pypi.
+# NB: does nothing if the package has already been published in this version.
 
 name: New release
 
@@ -13,46 +14,24 @@ on:
     types: [created]
 
 jobs:
+  check_exists:
+    uses: ./.github/workflows/_check_exists.yml
+    with:
+      url: "https://pypi.org/pypi/$PACKAGE_NAME/json"
+
   tests:
+    needs:
+      - check_exists
+    if: needs.check_exists.outputs.exists == 'false'
     uses: ./.github/workflows/_tests.yml
     secrets:
       codecov_token: "${{ secrets.CODECOV_TOKEN }}"
 
-  check_exists:
-    needs:
-      - tests
-    runs-on: ubuntu-latest
-    container: python:3.13-slim
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v5
-      - name: Prepare Python
-        run: |
-          pip install -q uv
-          uv venv --seed $VENV
-          . $VENV/bin/activate
-          uv pip install toml
-      - name: Install curl/jq
-        run: |
-          apt-get update
-          apt-get install -y curl jq
-      - name: Check if version already exists
-        id: check_exists
-        run: |
-          . $VENV/bin/activate
-          PACKAGE_VERSION=$(python -c "import toml; print(toml.load('pyproject.toml')['project']['version'])")
-          PACKAGE_NAME=$(python -c "import toml; print(toml.load('pyproject.toml')['project']['name'])")
-          echo "Checking: $PACKAGE_NAME==$PACKAGE_VERSION"
-          if curl -s "https://pypi.org/pypi/$PACKAGE_NAME/json" | jq -r '.releases | keys[]' | grep -q "^$PACKAGE_VERSION$"; then
-            echo "should_publish=false" >> $GITHUB_OUTPUT
-          else
-            echo "should_publish=true" >> $GITHUB_OUTPUT
-          fi
-
   build:
     needs:
       - check_exists
-    if: needs.check_exists.outputs.should_publish == 'true'
+      - tests
+    if: needs.check_exists.outputs.exists == 'false'
     uses: ./.github/workflows/_build.yml
     with:
       path: dist/
@@ -62,7 +41,7 @@ jobs:
     needs:
       - check_exists
       - build
-    if: needs.check_exists.outputs.should_publish == 'true'
+    if: needs.check_exists.outputs.exists == 'false'
     runs-on: ubuntu-latest
     container: python:3.13-slim
     environment:
