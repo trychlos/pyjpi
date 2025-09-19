@@ -10,7 +10,7 @@ from __future__ import annotations
 from datetime import datetime
 import logging
 
-from aiohttp.web import HTTPError
+import aiohttp
 
 
 class JPILibrary:
@@ -64,6 +64,24 @@ class JPILibrary:
             result = self._batt_parse_text(resp["text"])
         return result
 
+    async def get(self, url: str):
+        """
+        Returns an object containing the raw HTTP response from GETting the provided url plus the got text content.
+        Uses async I/O to avoid blocking the main event loop.
+        Throw an exception in case of an error.
+        """
+        resp = None
+        result = None
+        try:
+            resp = await self._session.get(url)
+        except (aiohttp.ClientError, TimeoutError) as e:
+            self._log.error("ClientError or TimeoutError exception: %s", e)
+            return False
+        if resp:
+            text = await resp.text()
+            result = {"text": text, "resp": resp}
+        return result
+
     async def getDeviceName(self, url: str):
         """
         Returns the device name as provided by the manufacturer.
@@ -76,21 +94,3 @@ class JPILibrary:
         if resp:
             device_name = resp["text"]
         return device_name
-
-    async def get(self, url: str):
-        """
-        Returns an object containing the raw HTTP response from GETting the provided url plus the got text content.
-        Uses async I/O to avoid blocking the main event loop.
-        Throw an exception in case of an error.
-        """
-        resp = None
-        result = None
-        try:
-            resp = await self._session.get(url)
-        except HTTPError as e:
-            self._log.error("HTTPError exception: %s", e)
-            return False
-        if resp:
-            text = await resp.text()
-            result = {"text": text, "resp": resp}
-        return result

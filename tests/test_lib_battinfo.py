@@ -23,7 +23,7 @@ async def test_battInfo_empty():
 
         async def text(self):
             """Returns a fake empty answer."""
-            return ""
+            return "\n"
 
         async def __aenter__(self):
             return self
