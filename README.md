@@ -1,17 +1,17 @@
 # pyJPI - An asynchronous Python module to interact with Android devices running JPI
 
-[![Maintenance](https://img.shields.io/badge/Maintained%3F-yes-green.svg)](https://github.com/trychlos/pyjpi)
-[![Latest release](https://github.com/trychlos/pyjpi/workflows/Latest%20release/badge.svg)](https://github.com/trychlos/pyjpi/actions)
-[![Newest commit](https://github.com/trychlos/pyjpi/workflows/Latest%20commit/badge.svg)](https://github.com/trychlos/pyjpi/actions)
+[![Maintenance](https://img.shields.io/badge/Maintained%3F-yes-green.svg?style=plastic)](https://github.com/trychlos/pyjpi)
+[![Latest release](https://img.shields.io/github/v/release/trychlos/pyjpi?style=plastic&logo=github&logoColor=white&label=Latest%20release&color=green)](https://github.com/trychlos/pyjpi/release)
+[![Last commit](https://img.shields.io/github/last-commit/trychlos/pyjpi?style=plastic&logo=github&logoColor=white&label=Last%20commit&color=green)](https://github.com/trychlos/pyjpi)
+[![PyPI version](https://img.shields.io/pypi/v/pyJPI?style=plastic&logo=pypi&logoColor=white&color=green)](https://pypi.org/project/pyJPI/)
 
-[![PyPI version fury.io](https://badge.fury.io/py/pyjpi.svg)](https://pypi.python.org/pypi/pyjpi/)
+[![Code coverage](https://img.shields.io/codecov/c/github/trychlos/pyjpi)](https://app.codecov.io/gh/trychlos/pyjpi)
 
 <!--
 [![CodeRabbit.ai is Awesome](https://img.shields.io/badge/AI-orange?label=CodeRabbit&color=orange&link=https%3A%2F%2Fcoderabbit.ai)](https://coderabbit.ai)
 [![renovate maintained](https://img.shields.io/badge/maintained%20with-renovate-blue?logo=renovatebot)](https://github.com/compatech/python-airos/issues/8)
 
 [![CodeFactor](https://www.codefactor.io/repository/github/compatech/python-airos/badge)](https://www.codefactor.io/repository/github/plugwise/python-airos)
-[![codecov](https://codecov.io/gh/compatech/python-airos/graph/badge.svg?token=WI5K2IZWNS)](https://codecov.io/gh/compatech/python-airos)
 
 [![Quality Gate Status](https://sonarcloud.io/api/project_badges/measure?project=CoMPaTech_python-airos&metric=alert_status)](https://sonarcloud.io/summary/new_code?id=CoMPaTech_python-airos)
 [![Technical Debt](https://sonarcloud.io/api/project_badges/measure?project=CoMPaTech_python-airos&metric=sqale_index)](https://sonarcloud.io/summary/new_code?id=CoMPaTech_python-airos)
