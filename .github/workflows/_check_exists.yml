@@ -12,6 +12,9 @@ on:
         description: "Whether the distribution has already been published"
         value: ${{ jobs.check_exists.outputs.exists }}
 
+env:
+  VENV: venv
+
 jobs:
   check_exists:
     runs-on: ubuntu-latest
