@@ -17,16 +17,13 @@ jobs:
     uses: ./.github/workflows/_tests.yml
     secrets:
       codecov_token: "${{ secrets.CODECOV_TOKEN }}"
-          
-  publishing:
-    name: Build and publish to PyPI
-    runs-on: ubuntu-latest
-    container: python:3.13-slim
-    environment: pypi
-    permissions:
-        id-token: write
+
+  build:
+    name: Build and upload in dist/
     needs:
       - tests
+    runs-on: ubuntu-latest
+    container: python:3.13-slim
     steps:
       - name: Check out code
         uses: actions/checkout@v5
@@ -35,10 +32,33 @@ jobs:
           pip install -q uv
           uv venv --seed $VENV
           . $VENV/bin/activate
-          uv pip install toml
+          uv pip install build
       - name: Build
         run: |
           . $VENV/bin/activate
           uv build
-      - name: upload release to PyPI
+      - name: Store the distribution packages
+        uses: actions/upload-artifact@v4
+        with:
+          name: python-package-distributions
+          path: dist/
+
+  publishing:
+    name: Publish to PyPI
+    needs:
+      - build
+    runs-on: ubuntu-latest
+    container: python:3.13-slim
+    environment:
+      name: pypi
+      url: https://pypi.org/p/pyjpi
+    permissions:
+        id-token: write
+    steps:
+      - name: Download all the dists
+        uses: actions/download-artifact@v4
+        with:
+          name: python-package-distributions
+          path: dist/
+      - name: Publish distribution 📦 to PyPI
         uses: pypa/gh-action-pypi-publish@release/v1.11
