@@ -13,33 +13,17 @@ on:
 
 env:
   VENV: venv
-  PYTHON: "3.13"
   CONTAINER: "python:3.13-slim"
 
 jobs:
   diag:
+    uses: ${{ github.repository }}/.github/workflows/_diag.yml@master
+
+  gate:
+    # allow manual runs OR tag pushes that are NOT '-rc'
+    if: ${{ github.event_name == 'workflow_dispatch' || (startsWith(github.ref, 'refs/tags/') && !contains(github.ref_name, '-rc')) }}
     runs-on: ubuntu-latest
     steps:
-      - name: Print event info
+      - name: Gate
         run: |
-          echo "EVENT:     $GITHUB_EVENT_NAME"
-          echo "REF:       $GITHUB_REF"
-          echo "REF_TYPE:  $GITHUB_REF_TYPE"
-          echo "REF_NAME:  $GITHUB_REF_NAME"
-      - name: Show event payload keys
-        run: |
-          jq -r '["keys:", (. | keys[]) ] | .[]' "$GITHUB_EVENT_PATH" || true
-      - name: List tags pointing at this commit
-        run: |
-          git init -q
-          git remote add origin "$GITHUB_SERVER_URL/$GITHUB_REPOSITORY"
-          git fetch -q --tags origin "${GITHUB_SHA}"
-          git checkout -q -B tmp "${GITHUB_SHA}"
-          echo "Tags pointing at HEAD:"
-          git tag --points-at HEAD || true
-      - name: Print github data
-        run: |
-          echo "github.event_name = '${{ github.event_name }}'"
-          echo "       github.ref = '${{ github.ref }}'"
-          echo "  github.ref_name = '${{ github.ref_name }}'"
-          echo "     github.token = '${{ github.token }}'"
+          echo "gate passed: ${{ github.ref_type }}='${{ github.ref_name }}'"
