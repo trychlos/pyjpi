@@ -1,0 +1,35 @@
+# - build the distribution
+
+name: _build
+on:
+  workflow_call:
+    inputs:
+      path:
+        required: true
+        type: string
+
+env:
+  VENV: venv
+
+jobs:
+  build:
+    name: Build and upload in dist/
+    runs-on: ubuntu-latest
+    container: python:3.13-slim
+    steps:
+      - name: Check out code
+        uses: actions/checkout@v5
+      - name: Prepare Python
+        run: |
+          pip install -q uv
+          uv venv --seed $VENV
+          . $VENV/bin/activate
+      - name: Build
+        run: |
+          . $VENV/bin/activate
+          uv build
+      - name: Store the distribution packages for later use
+        uses: actions/upload-artifact@v4
+        with:
+          name: python-package-distributions
+          path: ${{ inputs.path 
