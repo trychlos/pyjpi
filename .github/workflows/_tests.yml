@@ -1,0 +1,106 @@
+# - execute all defined tests
+# - compute (and upload) tests coverage
+# - compute code complexity
+
+name: _tests
+on:
+  workflow_call:
+    inputs:
+      container:
+        required: true
+        type: string
+    secrets:
+      codecov_token:
+        required: true
+
+jobs:
+  shellcheck:
+    name: Shellcheck
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out committed code
+        uses: actions/checkout@v5
+      - name: Run ShellCheck
+        uses: ludeeus/action-shellcheck@master
+
+  pytest:
+    name: Run pytest
+    runs-on: ubuntu-latest
+    container: ${{ inputs.container }}
+    steps:
+      - uses: actions/checkout@v5
+      - name: Prepare Python
+        run: |
+          pip install -q uv
+          uv venv --seed $VENV
+          . $VENV/bin/activate
+          uv pip install -r requirements.txt -r requirements-test.txt
+          uv pip install -e .
+      - name: Run tests with coverage
+        run: |
+          . $VENV/bin/activate
+          pytest --log-level info tests/ --cov='pyjpi/'
+      - name: Upload coverage artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-3.13
+          path: .coverage
+          if-no-files-found: error
+          include-hidden-files: true
+
+  coverage:
+    name: Process tests coverage
+    needs:
+      - pytest
+    runs-on: ubuntu-latest
+    container: ${{ inputs.container }}
+    steps:
+      - name: Check out committed code
+        uses: actions/checkout@v5
+      - name: Prepare Python
+        run: |
+          pip install -q uv
+          uv venv --seed $VENV
+          . $VENV/bin/activate
+          uv pip install -r requirements.txt -r requirements-test.txt
+      - name: Download coverage artifact
+        uses: actions/download-artifact@v5
+        with:
+          name: coverage-3.13
+          path: ${{ github.workspace }}/artifacts
+      - name: Combine & check
+        run: |
+          . $VENV/bin/activate
+          coverage combine artifacts/.coverage*
+          coverage report --fail-under=85
+          coverage xml
+      - name: Install deps for Codecov
+        run: |
+          apt-get update
+          apt-get install -y git curl gnupg ca-certificates
+      - name: Upload to Codecov
+        uses: codecov/codecov-action@v5
+        env:
+          CODECOV_TOKEN: ${{ secrets.codedov_token }}
+          slug: trychlos/pyjpi
+
+  complexity:
+    name: Complexity (radon)
+    needs:
+      - pytest
+    runs-on: ubuntu-latest
+    container: ${{ inputs.container }}
+    steps:
+      - name: Check out committed code
+        uses: actions/checkout@v5
+      - name: Prepare Python
+        run: |
+          pip install -q uv
+          uv venv --seed $VENV
+          . $VENV/bin/activate
+          uv pip install -r requirements.txt -r requirements-test.txt
+      - name: Radon complexity
+        run: |
+          . $VENV/bin/activate
+          echo "Showing complexity ≥ 'C'"
+          radon cc pyjpi/ tests/ -s -nc --no-assert
