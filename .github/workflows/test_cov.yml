@@ -1,0 +1,15 @@
+# This workflow just runs tests
+
+name: test_cov
+
+on:
+  workflow_dispatch:
+
+env:
+  VENV: venv
+
+jobs:
+  tests:
+    uses: ./.github/workflows/_tests.yml
+    secrets:
+      codecov_token: "${{ secrets.CODECOV_TOKEN }}"
