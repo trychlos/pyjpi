@@ -92,7 +92,7 @@ jobs:
           ls -l ${RUNNER_TEMP}/${{ steps.vars.outputs.pkg }}.*
       - name: Create GitHub release
         env:
-          GH_TOKEN: ${{ github.token }}
+          GH_TOKEN: ${{ secrets.PAT0 }}
           TAG: ${{ steps.vars.outputs.tag }}
         run: |
           gh release create "$TAG" \
