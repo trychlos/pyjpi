@@ -69,7 +69,7 @@ jobs:
           uv publish --publish-url https://test.pypi.org/legacy/
 
   release:
-    name: Publish GitHub Release
+    name: Create GitHub Release
     needs:
       - publish
     runs-on: ubuntu-latest
