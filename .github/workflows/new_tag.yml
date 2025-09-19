@@ -13,7 +13,6 @@ on:
 
 env:
   VENV: venv
-  CONTAINER: "python:3.13-slim"
 
 jobs:
   diag:
@@ -33,7 +32,5 @@ jobs:
     needs:
       - gate
     uses: ./.github/workflows/_tests.yml
-    with:
-      container: "$CONTAINER"
     secrets:
       codecov_token: "${{ secrets.CODECOV_TOKEN }}"
