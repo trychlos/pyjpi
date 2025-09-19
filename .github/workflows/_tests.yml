@@ -9,6 +9,9 @@ on:
       codecov_token:
         required: true
 
+env:
+  VENV: venv
+
 jobs:
   shellcheck:
     name: Shellcheck
