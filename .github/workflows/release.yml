@@ -19,28 +19,9 @@ jobs:
       codecov_token: "${{ secrets.CODECOV_TOKEN }}"
 
   build:
-    name: Build and upload in dist/
-    needs:
-      - tests
-    runs-on: ubuntu-latest
-    container: python:3.13-slim
-    steps:
-      - name: Check out code
-        uses: actions/checkout@v5
-      - name: Prepare Python
-        run: |
-          pip install -q uv
-          uv venv --seed $VENV
-          . $VENV/bin/activate
-      - name: Build
-        run: |
-          . $VENV/bin/activate
-          uv build
-      - name: Store the distribution packages
-        uses: actions/upload-artifact@v4
-        with:
-          name: python-package-distributions
-          path: dist/
+    uses: ./.github/workflows/_build.yml
+    with:
+      path: dist/
 
   publishing:
     name: Publish to PyPI
@@ -54,12 +35,12 @@ jobs:
     permissions:
         id-token: write
     steps:
-      - name: Download all the dists
+      - name: Get the pre-built distribution
         uses: actions/download-artifact@v4
         with:
           name: python-package-distributions
           path: dist/
-      - name: Publish distribution 📦 to PyPI
+      - name: Publish 📦 to PyPI
         # uses: pypa/gh-action-pypi-publish@release/v1.13
         run: |
           pip install -q uv
