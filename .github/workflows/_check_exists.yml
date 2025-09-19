@@ -16,6 +16,9 @@ jobs:
   check_exists:
     runs-on: ubuntu-latest
     container: python:3.13-slim
+    # Map the job outputs to step outputs
+    outputs:
+      exists: ${{ steps.check_exists.outputs.exists }}
     steps:
       - name: Checkout code
         uses: actions/checkout@v5
