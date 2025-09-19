@@ -62,5 +62,7 @@ jobs:
       - name: Publish distribution 📦 to PyPI
         # uses: pypa/gh-action-pypi-publish@release/v1.13
         run: |
+          pip install -q uv
+          uv venv --seed $VENV
           . $VENV/bin/activate
           uv publish
