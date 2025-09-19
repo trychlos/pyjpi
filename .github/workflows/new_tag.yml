@@ -34,6 +34,6 @@ jobs:
       - gate
     uses: ./.github/workflows/_tests.yml
     with:
-      container: $CONTAINER
+      container: "$CONTAINER"
     secrets:
       codecov_token: "${{ secrets.CODECOV_TOKEN }}"
