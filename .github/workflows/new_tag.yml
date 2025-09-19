@@ -35,55 +35,43 @@ jobs:
     secrets:
       codecov_token: "${{ secrets.CODECOV_TOKEN }}"
 
-  test-publishing:
-    name: Build & publish to TestPyPI (skip if exists)
+  check_exists:
     needs:
       - tests
+    uses: ./.github/workflows/_check_exists.yml
+    with:
+      url: "https://test.pypi.org/pypi/$PACKAGE_NAME/json"
+
+  build:
+    needs:
+      - check_exists
+    if: needs.check_exists.outputs.exists == 'false'
+    uses: ./.github/workflows/_build.yml
+    with:
+      path: dist/
+
+  publish:
+    name: Publish to TestPyPI
+    needs:
+      - build
     runs-on: ubuntu-latest
     container: python:3.13-slim
     environment: testpypi
     permissions:
       id-token: write
     steps:
-      - name: Check out committed code
-        uses: actions/checkout@v5
-      - name: Prepare Python
-        run: |
-          pip install -q uv
-          uv venv --seed $VENV
-          . $VENV/bin/activate
-          uv pip install toml
-      - name: Install curl/jq
-        run: |
-          apt-get update
-          apt-get install -y curl jq
-      - name: Check if version exists on TestPyPI
-        id: check
-        run: |
-          . $VENV/bin/activate
-          PACKAGE_VERSION=$(python -c "import toml; print(toml.load('pyproject.toml')['project']['version'])")
-          PACKAGE_NAME=$(python -c "import toml; print(toml.load('pyproject.toml')['project']['name'])")
-          echo "Checking: $PACKAGE_NAME==$PACKAGE_VERSION"
-          if curl -s "https://test.pypi.org/pypi/$PACKAGE_NAME/json" | jq -r '.releases | keys[]' | grep -q "^$PACKAGE_VERSION$"; then
-            echo "should_publish=false" >> $GITHUB_OUTPUT
-          else
-            echo "should_publish=true" >> $GITHUB_OUTPUT
-          fi
-      - name: Build
-        if: steps.check.outputs.should_publish == 'true'
-        run: |
-          . $VENV/bin/activate
-          uv build
       - name: Publish to TestPyPI
         if: steps.check.outputs.should_publish == 'true'
         run: |
+          pip install -q uv
+          uv venv --seed $VENV
           . $VENV/bin/activate
           uv publish --publish-url https://test.pypi.org/legacy/
 
   release:
     name: Publish GitHub Release
     needs:
-      - test-publishing
+      - publish
     runs-on: ubuntu-latest
     permissions:
       contents: write
