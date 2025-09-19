@@ -115,7 +115,7 @@ repos:
     hooks:
       - id: pytest
         name: "pytest"
-        entry: scripts/run-in-env.sh pytest --log-level info tests/ --cov='pyjpi/'
+        entry: scripts/run-in-env.sh pytest --log-level info tests/ --cov='pyjpi/' --cov-report=term-missing --cov-report=term
         language: script
         types: [python]
         pass_filenames: false
