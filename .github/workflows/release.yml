@@ -10,6 +10,10 @@ env:
 
 on:
   workflow_dispatch:
+  workflow_run:
+    workflows:
+      - "New tag"
+    types: [completed]
   release:
     types: [created]
 
