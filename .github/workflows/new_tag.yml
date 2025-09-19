@@ -35,4 +35,5 @@ jobs:
     uses: ./.github/workflows/_tests.yml
     with:
       container: $CONTAINER
-      codecov_token: ${{ secrets.CODECOV_TOKEN }}
+    secrets:
+      codecov_token: "${{ secrets.CODECOV_TOKEN }}"
