@@ -82,6 +82,7 @@ jobs:
         env:
           CODECOV_TOKEN: ${{ secrets.codecov_token }}
           slug: trychlos/pyjpi
+          files: coverage.xml
 
   complexity:
     name: Complexity (radon)
