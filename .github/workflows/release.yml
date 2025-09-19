@@ -17,13 +17,16 @@ jobs:
     uses: ./.github/workflows/_tests.yml
     secrets:
       codecov_token: "${{ secrets.CODECOV_TOKEN }}"
-
-  build:
-    name: Build the distribution to be published
-    needs:
-      - tests
+          
+  publishing:
+    name: Build and publish to PyPI
     runs-on: ubuntu-latest
     container: python:3.13-slim
+    environment: pypi
+    permissions:
+        id-token: write
+    needs:
+      - tests
     steps:
       - name: Check out code
         uses: actions/checkout@v5
@@ -37,21 +40,5 @@ jobs:
         run: |
           . $VENV/bin/activate
           uv build
-      - name: Upload the distribution packages
-        uses: actions/upload-artifact@v4
-        with:
-          name: match-pick-distributions
-          path: dist/
-          
-  publishing:
-    name: Build and publish to PyPI
-    runs-on: ubuntu-latest
-    container: python:3.13-slim
-    environment: pypi
-    permissions:
-        id-token: write
-    needs:
-      - build
-    steps:
       - name: upload release to PyPI
         uses: pypa/gh-action-pypi-publish@release/v1.11
