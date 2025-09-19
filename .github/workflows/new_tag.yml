@@ -17,7 +17,7 @@ env:
 
 jobs:
   diag:
-    uses: "${{ github.event.repository.name }}/.github/workflows/_diag.yml@master"
+    uses: pyjpi/.github/workflows/_diag.yml@master
 
   gate:
     # allow manual runs OR tag pushes that are NOT '-rc'
