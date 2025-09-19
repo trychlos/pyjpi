@@ -80,7 +80,7 @@ jobs:
       - name: Upload to Codecov
         uses: codecov/codecov-action@v5
         env:
-          #CODECOV_TOKEN: ${{ secrets.codecov_token }}
+          CODECOV_TOKEN: ${{ secrets.codecov_token }}
           slug: trychlos/pyjpi
           #files: coverage.xml
           override_branch: master
