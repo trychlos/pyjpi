@@ -55,13 +55,7 @@ jobs:
       - name: Create Shields endpoint JSON
         run: |
           . $VENV/bin/activate
-          python -c "
-            import xml.etree.ElementTree as ET, json;
-            r=ET.parse('coverage.xml').getroot(); 
-            pct=round(float(r.attrib.get('line-rate',0.0))*100); 
-            color=('green' if pct>=90 else 'yellowgreen' if pct>=75 else 'orange'); 
-            json.dump({'schemaVersion':1,'label':'coverage','message':f'{pct}%','color':color}, open('.badges/coverage.json','w'))
-          "
+          python -c "import xml.etree.ElementTree as ET, json; r=ET.parse('coverage.xml').getroot(); pct=round(float(r.attrib.get('line-rate',0.0))*100); color=('green' if pct>=90 else 'yellowgreen' if pct>=75 else 'orange'); json.dump({'schemaVersion':1,'label':'coverage','message':f'{pct}%','color':color}, open('.badges/coverage.json','w'))"
       - name: Commit coverage badge to repo
         run: |
           git config --global --add safe.directory $(pwd)
