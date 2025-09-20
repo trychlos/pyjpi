@@ -34,7 +34,6 @@ jobs:
         run: |
           apt update
           apt install -y git
-          mkdir -p .badges
       - name: Checkout the repository
         uses: actions/checkout@v5
       - name: Prepare Python environment (after checkout)
@@ -48,6 +47,7 @@ jobs:
       - name: Run pytest
         run: |
           . $VENV/bin/activate
+          mkdir -p .badges
           pytest --log-level info tests/ --cov=pyjpi
           coverage report --fail-under=85
           coverage xml
@@ -55,6 +55,7 @@ jobs:
       - name: Create Shields endpoint JSON
         run: |
           . $VENV/bin/activate
+          mkdir -p .badges
           python -c "import xml.etree.ElementTree as ET, json; r=ET.parse('coverage.xml').getroot(); pct=round(float(r.attrib.get('line-rate',0.0))*100); color=('green' if pct>=90 else 'yellowgreen' if pct>=75 else 'orange'); json.dump({'schemaVersion':1,'label':'coverage','message':f'{pct}%','color':color}, open('.badges/coverage.json','w'))"
       - name: Commit coverage badge to repo
         run: |
@@ -65,44 +66,6 @@ jobs:
           git commit -m "ci: update coverage badges [skip ci]" || echo "No changes"
           git push
 
-  coverage:
-    name: Process tests coverage
-    needs:
-      - pytest
-    runs-on: ubuntu-latest
-    container: python:3.13-slim
-    steps:
-      - name: Check out committed code
-        uses: actions/checkout@v5
-      - name: Prepare Python
-        run: |
-          pip install -q uv
-          uv venv --seed $VENV
-          . $VENV/bin/activate
-          uv pip install -r requirements.txt -r requirements-test.txt
-      - name: Download coverage artifact
-        uses: actions/download-artifact@v5
-        with:
-          name: coverage-3.13
-          path: ${{ github.workspace }}/artifacts
-      - name: Combine & check
-        run: |
-          . $VENV/bin/activate
-          coverage combine artifacts/.coverage*
-          coverage report --fail-under=85
-          coverage xml
-      - name: Install deps for Codecov
-        run: |
-          apt-get update
-          apt-get install -y git curl gnupg ca-certificates
-      - name: Upload to Codecov
-        uses: codecov/codecov-action@v5
-        env:
-          CODECOV_TOKEN: ${{ secrets.codecov_token }}
-          slug: trychlos/pyjpi
-          #files: coverage.xml
-          override_branch: master
-
   complexity:
     name: Complexity (radon)
     needs:
@@ -110,16 +73,31 @@ jobs:
     runs-on: ubuntu-latest
     container: python:3.13-slim
     steps:
-      - name: Check out committed code
+      - name: Prepare shell environment (before checkout)
+        run: |
+          apt update
+          apt install -y git
+      - name: Checkout the repository
         uses: actions/checkout@v5
-      - name: Prepare Python
+      - name: Prepare Python environment (after checkout)
         run: |
           pip install -q uv
           uv venv --seed $VENV
           . $VENV/bin/activate
           uv pip install -r requirements.txt -r requirements-test.txt
-      - name: Radon complexity
+      - name: Compute Radon complexity
         run: |
           . $VENV/bin/activate
           echo "Showing complexity ≥ 'C'"
           radon cc pyjpi/ tests/ -s -nc --no-assert
+          CCMAX=$(radon cc -s . | grep -E ' - [A-F] \([0-9]+)' | awk '{ print $5 $6 }' | sort -r | head -1 | sed -e 's|(.*$||')
+          mkdir -p .badges
+          python -c 'import os, json; c = int(os.environ["CCMAX"]); color = ("brightgreen" if c<=5 else "green" if c<=10 else "yellow" if c<=20 else "orange" if c<=30 else "red" if c<=40 else "critical"); json.dump({"schemaVersion":1,"label":"complexity","message":str(c),"color":color}, open(".badges/radon.json","w"))'
+      - name: Commit complexity badge to repo
+        run: |
+          git config --global --add safe.directory $(pwd)
+          git config user.name  "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add .badges/radon.json
+          git commit -m "ci: update radon badges [skip ci]" || echo "No changes"
+          git push
