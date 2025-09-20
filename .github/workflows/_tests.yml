@@ -36,13 +36,6 @@ jobs:
           apt install -y git
       - name: Checkout the repository
         uses: actions/checkout@v5
-      - name: Diagnose workspace
-        run: |
-          echo "PWD: $(pwd)"
-          echo "WORKSPACE: $GITHUB_WORKSPACE"
-          ls -la
-          ls -la "$GITHUB_WORKSPACE" || true
-          git rev-parse --show-toplevel || echo "not a git repo"
       - name: Prepare Python environment (after checkout)
         run: |
           pip install -q uv
@@ -59,27 +52,24 @@ jobs:
           coverage xml
           mkdir -p .badges
           coverage-badge -o .badges/coverage.svg -f
-      #- name: Upload coverage artifact
-      #  uses: actions/upload-artifact@v4
-      #  with:
-      #    name: coverage-3.13
-      #    path: .coverage
-      #    if-no-files-found: error
-      #    include-hidden-files: true
-      - name: Diagnose workspace
+      - name: Create Shields endpoint JSON
         run: |
-          echo "PWD: $(pwd)"
-          echo "WORKSPACE: $GITHUB_WORKSPACE"
-          ls -la
-          ls -la "$GITHUB_WORKSPACE" || true
-          git rev-parse --show-toplevel || echo "not a git repo"
+          . $VENV/bin/activate
+          pct=$(python - <<'PY'
+from xml.etree import ElementTree as ET
+root = ET.parse("coverage.xml").getroot()
+rate = float(root.attrib.get("line-rate", 0.0))
+print(f"{rate*100:.0f}")
+PY
+)
+          color=$([ "$pct" -ge 90 ] && echo green || ([ "$pct" -ge 75 ] && echo yellowgreen || echo orange))
+          printf '{"schemaVersion":1,"label":"coverage","message":"%s%%","color":"%s"}\n' "$pct" "$color" > .badges/coverage.json
       - name: Commit coverage badge to repo
-        working-directory: ${{ github.workspace }}
         run: |
           git config --global --add safe.directory $(pwd)
           git config user.name  "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add .badges/coverage.svg
+          git add .badges/coverage.svg .badges/coverage.json
           git commit -m "ci: update coverage badge [skip ci]" || echo "No changes"
           git push
 
