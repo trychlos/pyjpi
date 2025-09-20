@@ -6,7 +6,7 @@
 [![PyPI version](https://img.shields.io/pypi/v/pyJPI?style=plastic&logo=pypi&logoColor=white&color=green)](https://pypi.org/project/pyJPI/)
 
 [![Code coverage](https://img.shields.io/endpoint?url=https%3A%2F%2Fraw.githubusercontent.com%2Ftrychlos%2Fpyjpi%2Fmaster%2F.badges%2Fcoverage.json&style=plastic&logo=codecov&logoColor=white)](https://app.codecov.io/gh/trychlos/pyjpi)
-[![Max cyclomatic complexity](https://img.shields.io/endpoint?url=https%3A%2F%2Fraw.githubusercontent.com%2Ftrychlos%2Fpyjpi%2Fmaster%2F.badges%radon.json&style=plastic)](https://github.com/trychlos/pyjpi)
+[![Max cyclomatic complexity](https://img.shields.io/endpoint?url=https%3A%2F%2Fraw.githubusercontent.com%2Ftrychlos%2Fpyjpi%2Fmaster%2F.badges%2Fradon.json&style=plastic)](https://github.com/trychlos/pyjpi)
 
 <!--
 [![CodeRabbit.ai is Awesome](https://img.shields.io/badge/AI-orange?label=CodeRabbit&color=orange&link=https%3A%2F%2Fcoderabbit.ai)](https://coderabbit.ai)
