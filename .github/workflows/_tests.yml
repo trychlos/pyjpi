@@ -5,9 +5,6 @@
 name: _tests
 on:
   workflow_call:
-    secrets:
-      codecov_token:
-        required: true
 
 env:
   VENV: venv
