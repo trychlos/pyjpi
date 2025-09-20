@@ -50,6 +50,7 @@ jobs:
         run: |
           . $VENV/bin/activate
           mkdir -p .badges
+          ls -lA .badges
           pytest --log-level info tests/ --cov=pyjpi
           coverage report --fail-under=85
           coverage xml
@@ -61,11 +62,13 @@ jobs:
           python -c "import xml.etree.ElementTree as ET, json; r=ET.parse('coverage.xml').getroot(); pct=round(float(r.attrib.get('line-rate',0.0))*100); color=('green' if pct>=90 else 'yellowgreen' if pct>=75 else 'orange'); json.dump({'schemaVersion':1,'label':'coverage','message':f'{pct}%','color':color}, open('.badges/coverage.json','w'))"
       - name: Commit coverage infos
         run: |
+          ls -lA .badges
           git config --global --add safe.directory $(pwd)
           git config user.name  "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git status
           git add .badges/coverage.svg .badges/coverage.json
-          git commit -m "ci: update coverage badges [skip ci]" || echo "No changes"
+          git commit -m "ci: update coverage informations [skip ci]" || echo "No changes"
           git push
 
   complexity:
@@ -89,6 +92,7 @@ jobs:
           uv pip install -r requirements.txt -r requirements-test.txt
       - name: Compute Radon complexity
         run: |
+          ls -lA .badges
           . $VENV/bin/activate
           echo "Showing complexity ≥ 'C'"
           radon cc pyjpi/ tests/ -s -nc --no-assert
@@ -98,9 +102,11 @@ jobs:
           python -c 'import os, json; rank = os.environ["CCMAX"].upper(); colors = {"A":"brightgreen","B":"green","C":"yellow","D":"orange","E":"red","F":"critical"}; json.dump({"schemaVersion":1,"label":"CC Max","message":rank,"color":colors.get(rank,"lightgrey")}, open(".badges/radon.json","w"))'
       - name: Commit complexity badge to repo
         run: |
+          ls -lA .badges
           git config --global --add safe.directory $(pwd)
           git config user.name  "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git status
           git add .badges/radon.json
-          git commit -m "ci: update radon badges [skip ci]" || echo "No changes"
+          git commit -m "ci: update radon informations [skip ci]" || echo "No changes"
           git push
