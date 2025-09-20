@@ -24,8 +24,6 @@ jobs:
       - check_exists
     if: needs.check_exists.outputs.exists == 'false'
     uses: ./.github/workflows/_tests.yml
-    secrets:
-      codecov_token: "${{ secrets.CODECOV_TOKEN }}"
 
   build:
     needs:
@@ -56,7 +54,6 @@ jobs:
           name: python-package-distributions
           path: dist/
       - name: Publish 📦 to PyPI
-        # uses: pypa/gh-action-pypi-publish@release/v1.13
         run: |
           pip install -q uv
           uv venv --seed $VENV

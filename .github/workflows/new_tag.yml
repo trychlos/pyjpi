@@ -28,12 +28,9 @@ jobs:
           echo "gate passed: ${{ github.ref_type }}='${{ github.ref_name }}'"
 
   tests:
-    # run tests and compute coverage and complexity
     needs:
       - gate
     uses: ./.github/workflows/_tests.yml
-    secrets:
-      codecov_token: "${{ secrets.CODECOV_TOKEN }}"
 
   check_exists:
     needs:
