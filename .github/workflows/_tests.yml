@@ -36,6 +36,8 @@ jobs:
           apt install -y git
       - name: Checkout the repository
         uses: actions/checkout@v5
+        with:
+          ref: ${{ github.event.repository.default_branch }}
       - name: Prepare Python environment (after checkout)
         run: |
           pip install -q uv
@@ -77,6 +79,8 @@ jobs:
           apt install -y git
       - name: Checkout the repository
         uses: actions/checkout@v5
+        with:
+          ref: ${{ github.event.repository.default_branch }}
       - name: Prepare Python environment (after checkout)
         run: |
           pip install -q uv
@@ -90,7 +94,7 @@ jobs:
           radon cc pyjpi/ tests/ -s -nc --no-assert
           export CCMAX=$(radon cc -s . | grep -E ' - [A-F] \([0-9]+)' | awk '{ print $5 $6 }' | sort -r | head -1 | sed -e 's|(.*$||')
           mkdir -p .badges
-          python -c 'import os, json; c = int(os.environ["CCMAX"]); color = ("brightgreen" if c<="A" else "green" if c<="B" else "yellow" if c<="C" else "orange" if c<="D" else "red" if c<="E" else "critical"); json.dump({"schemaVersion":1,"label":"complexity","message":str(c),"color":color}, open(".badges/radon.json","w"))'
+          python -c 'import os, json; rank = os.environ["CCMAX"].upper(); colors = {"A":"brightgreen","B":"green","C":"yellow","D":"orange","E":"red","F":"critical"}; json.dump({"schemaVersion":1,"label":"CC Max","message":rank,"color":colors.get(rank,"lightgrey")}, open(".badges/radon.json","w"))'
       - name: Commit complexity badge to repo
         run: |
           git config --global --add safe.directory $(pwd)
