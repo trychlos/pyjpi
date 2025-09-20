@@ -30,8 +30,7 @@ jobs:
     runs-on: ubuntu-latest
     container: python:3.13-slim
     steps:
-      - uses: actions/checkout@v5
-      - name: Run pytest
+      - name: Prepare environment
         run: |
           pip install -q uv
           uv venv --seed $VENV
@@ -40,14 +39,17 @@ jobs:
           uv pip install -e .
           uv pip install coverage-badge
           apt update
-          apt install -y git jq
+          apt install -y git
+      - name: Checkout the repository
+        uses: actions/checkout@v5
+      - name: Run pytest
+        run: |
+          . $VENV/bin/activate
           pytest --log-level info tests/ --cov=pyjpi
-          # run coverage
           coverage report --fail-under=85
           coverage xml
           mkdir -p .badges
           coverage-badge -o .badges/coverage.svg -f
-          ls -l .badges/*
       #- name: Upload coverage artifact
       #  uses: actions/upload-artifact@v4
       #  with:
