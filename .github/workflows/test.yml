@@ -1,4 +1,4 @@
-# This workflow just runs tests
+# testing reusable workflows
 
 name: test_cov
 
