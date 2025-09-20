@@ -30,12 +30,19 @@ jobs:
     runs-on: ubuntu-latest
     container: python:3.13-slim
     steps:
-      - name: Prepare shell environment (before echeckout)
+      - name: Prepare shell environment (before checkout)
         run: |
           apt update
           apt install -y git
       - name: Checkout the repository
         uses: actions/checkout@v5
+      - name: Diagnose workspace
+        run: |
+          echo "PWD: $(pwd)"
+          echo "WORKSPACE: $GITHUB_WORKSPACE"
+          ls -la
+          ls -la "$GITHUB_WORKSPACE" || true
+          git rev-parse --show-toplevel || echo "not a git repo"
       - name: Prepare Python environment (after checkout)
         run: |
           pip install -q uv
@@ -59,7 +66,15 @@ jobs:
       #    path: .coverage
       #    if-no-files-found: error
       #    include-hidden-files: true
+      - name: Diagnose workspace
+        run: |
+          echo "PWD: $(pwd)"
+          echo "WORKSPACE: $GITHUB_WORKSPACE"
+          ls -la
+          ls -la "$GITHUB_WORKSPACE" || true
+          git rev-parse --show-toplevel || echo "not a git repo"
       - name: Commit coverage badge to repo
+        working-directory: ${{ github.workspace }}
         run: |
           git config user.name  "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
