@@ -57,7 +57,7 @@ jobs:
           . $VENV/bin/activate
           mkdir -p .badges
           python -c "import xml.etree.ElementTree as ET, json; r=ET.parse('coverage.xml').getroot(); pct=round(float(r.attrib.get('line-rate',0.0))*100); color=('green' if pct>=90 else 'yellowgreen' if pct>=75 else 'orange'); json.dump({'schemaVersion':1,'label':'coverage','message':f'{pct}%','color':color}, open('.badges/coverage.json','w'))"
-      - name: Commit coverage badge to repo
+      - name: Commit coverage infos
         run: |
           git config --global --add safe.directory $(pwd)
           git config user.name  "github-actions[bot]"
@@ -68,8 +68,6 @@ jobs:
 
   complexity:
     name: Complexity (radon)
-    needs:
-      - pytest
     runs-on: ubuntu-latest
     container: python:3.13-slim
     steps:
@@ -90,7 +88,7 @@ jobs:
           . $VENV/bin/activate
           echo "Showing complexity ≥ 'C'"
           radon cc pyjpi/ tests/ -s -nc --no-assert
-          CCMAX=$(radon cc -s . | grep -E ' - [A-F] \([0-9]+)' | awk '{ print $5 $6 }' | sort -r | head -1 | sed -e 's|(.*$||')
+          export CCMAX=$(radon cc -s . | grep -E ' - [A-F] \([0-9]+)' | awk '{ print $5 $6 }' | sort -r | head -1 | sed -e 's|(.*$||')
           mkdir -p .badges
           python -c 'import os, json; c = int(os.environ["CCMAX"]); color = ("brightgreen" if c<=5 else "green" if c<=10 else "yellow" if c<=20 else "orange" if c<=30 else "red" if c<=40 else "critical"); json.dump({"schemaVersion":1,"label":"complexity","message":str(c),"color":color}, open(".badges/radon.json","w"))'
       - name: Commit complexity badge to repo
