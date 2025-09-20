@@ -104,3 +104,4 @@ jobs:
             --generate-notes \
             ${RUNNER_TEMP}/${{ steps.vars.outputs.pkg }}.tar.gz \
             ${RUNNER_TEMP}/${{ steps.vars.outputs.pkg }}.zip
+          gh workflow run release.yml
