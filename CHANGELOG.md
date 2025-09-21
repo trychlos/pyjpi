@@ -8,6 +8,8 @@ All notable changes to this project are documented in this file.
 
 - Add CodeFactor (<https://www.codefactor.io/repository/github/trychlos/pyjpi>)
 
+- Comment out 'maintained=yes' badge
+
 ## [0.1.26] - 2025-09-20
 
 ### Added

@@ -1,6 +1,9 @@
 # pyJPI - An asynchronous Python module to interact with Android devices running JPI
 
+<!-->
 [![Maintenance](https://img.shields.io/badge/Maintained%3F-yes-green.svg?style=plastic)](https://github.com/trychlos/pyjpi)
+-->
+
 [![Latest release](https://img.shields.io/github/v/release/trychlos/pyjpi?style=plastic&logo=github&logoColor=white&label=Latest%20release&color=green)](https://github.com/trychlos/pyjpi/release)
 [![Latest commit](https://img.shields.io/github/last-commit/trychlos/pyjpi?style=plastic&logo=github&logoColor=white&label=Latest%20commit&color=green)](https://github.com/trychlos/pyjpi)
 [![PyPI version](https://img.shields.io/pypi/v/pyJPI?style=plastic&logo=pypi&logoColor=white&color=green)](https://pypi.org/project/pyJPI/)
