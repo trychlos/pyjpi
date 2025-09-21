@@ -6,6 +6,8 @@ All notable changes to this project are documented in this file.
 
 ### Changes
 
+- Add CodeFactor (<https://www.codefactor.io/repository/github/trychlos/pyjpi>)
+
 ## [0.1.26] - 2025-09-20
 
 ### Added
