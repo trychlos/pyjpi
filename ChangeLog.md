@@ -10,12 +10,8 @@
     - Add CodeFactor (<https://www.codefactor.io/repository/github/trychlos/pyjpi>)
     - Refactoring: reformat and rename ChangeLog
     - Refactoring: comment out 'maintained=yes' badge
-    - Update .gitignore
-<<<<<<< HEAD
-    - Reformat ChangeLog
-=======
+    - Refactoring: update .gitignore
     - Refactoring: .badges/ becomes .github/assets
->>>>>>> ee94d4e (tt)
 
 ### 0.1.26
 
