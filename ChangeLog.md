@@ -6,7 +6,6 @@
 
     Release date:
 
-
     - Add CodeFactor (<https://www.codefactor.io/repository/github/trychlos/pyjpi>)
     - Refactoring: reformat and rename ChangeLog
     - Refactoring: comment out 'maintained=yes' badge
