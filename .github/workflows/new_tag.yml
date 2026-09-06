@@ -97,7 +97,7 @@ jobs:
           TAG: ${{ steps.vars.outputs.tag }}
         run: |
           gh release create "$TAG" \
-            --title "Release v$TAG" \
+            --title "v$TAG" \
             --generate-notes \
             ${RUNNER_TEMP}/${{ steps.vars.outputs.pkg }}.tar.gz \
             ${RUNNER_TEMP}/${{ steps.vars.outputs.pkg }}.zip
