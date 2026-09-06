@@ -7,10 +7,9 @@ name: New tag
 run-name: Publishing v${{ github.ref_name }}
 
 on:
-  workflow_dispatch:
   push:
     tags:
-      - '*'               # run on any new tag
+      - "[0-9]+.[0-9]+.[0-9]+"
 
 env:
   VENV: venv
@@ -19,18 +18,7 @@ jobs:
   diag:
     uses: ./.github/workflows/_diag.yml
 
-  gate:
-    # allow manual runs OR tag pushes that are NOT '-rc'
-    if: ${{ github.event_name == 'workflow_dispatch' || (startsWith(github.ref, 'refs/tags/') && !contains(github.ref_name, '-rc')) }}
-    runs-on: ubuntu-latest
-    steps:
-      - name: Gate
-        run: |
-          echo "gate passed: ${{ github.ref_type }}='${{ github.ref_name }}'"
-
   tests:
-    needs:
-      - gate
     uses: ./.github/workflows/_tests.yml
 
   check_exists:
