@@ -11,6 +11,9 @@ authors = [
 description = "A library to access Android devices which run JPI"
 readme = "README.md"
 requires-python = ">=3.10"
+dependencies = [
+  "aiohttp>=3.0.0",
+]
 classifiers = [
     "Programming Language :: Python :: 3",
     "Operating System :: OS Independent",

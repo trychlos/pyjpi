@@ -21,6 +21,9 @@ async def test_battInfo_empty():
         def raise_for_status(self):  # pylint: disable=C0116
             return None
 
+        def release(self):
+            """Release the fake response."""
+
         async def text(self):
             """Returns a fake empty answer."""
             return "\n"
@@ -42,7 +45,7 @@ async def test_battInfo_empty():
     assert not info
 
     # keep assertion flexible re: extra kwargs
-    assert session.get.await_args.args[0] == f"{URL}?action=battInfo"
+    assert session.get.await_args.args[0] == f"{URL}/?action=battInfo"
 
 
 @pytest.mark.asyncio
@@ -56,6 +59,9 @@ async def test_battInfo_parses_and_returns_expected_dict():
 
         def raise_for_status(self):  # pylint: disable=C0116
             return None
+
+        def release(self):
+            """Release the fake response."""
 
         async def text(self):
             """Returns a fake (but with the expected format) answer."""
@@ -82,4 +88,17 @@ async def test_battInfo_parses_and_returns_expected_dict():
     assert info == {"level": 87, "charging": True, "power": False}
 
     # keep assertion flexible re: extra kwargs
-    assert session.get.await_args.args[0] == f"{URL}?action=battInfo"
+    assert session.get.await_args.args[0] == f"{URL}/?action=battInfo"
+
+
+@pytest.mark.asyncio
+async def test_battInfo_preserves_existing_query():
+    """Test the action is added without discarding existing query parameters."""
+    lib = await jpiInit(MagicMock())
+    lib.get = AsyncMock(
+        return_value={"text": "Niveau: 87%\nEn charge: OUI\nAlim. connectée: NON"}
+    )
+
+    await lib.battInfo(f"{URL}?token=secret")
+
+    lib.get.assert_awaited_once_with(f"{URL}/?token=secret&action=battInfo")

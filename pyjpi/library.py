@@ -7,19 +7,22 @@ This file is so the first version of such the interaction library.
 
 from __future__ import annotations
 
-from datetime import datetime
 import logging
+from datetime import UTC, datetime
 
 import aiohttp
+from yarl import URL
+
+from .exceptions import JPIConnectionError, JPIResponseError
 
 
 class JPILibrary:
     """Class for the pyJPI library."""
 
-    def __init__(self, session, version):
+    def __init__(self, session: aiohttp.ClientSession, version: str) -> None:
         """Initialize a HTTP session."""
         self._session = session
-        self._initialized = datetime.now()
+        self._initialized = datetime.now(UTC)
         self._log = logging.getLogger(__name__)
         self._log.debug("JPILibrary v%s successfully instantiated", version)
 
@@ -56,7 +59,7 @@ class JPILibrary:
             charging: <bool>
             power: <bool>
         """
-        target = f"{url}?action=battInfo"
+        target = str(URL(url).update_query(action="battInfo"))
         resp = await self.get(target)
         result = None
         self._log.debug("battInfo resp=%s", resp)
@@ -64,30 +67,35 @@ class JPILibrary:
             result = self._batt_parse_text(resp["text"])
         return result
 
-    async def get(self, url: str):
+    async def get(self, url: str) -> dict[str, object]:
         """
         Returns an object containing the raw HTTP response from GETting the provided url plus the got text content.
         Uses async I/O to avoid blocking the main event loop.
         Throw an exception in case of an error.
         """
-        resp = None
-        result = None
+        resp: aiohttp.ClientResponse | None = None
         try:
             resp = await self._session.get(url)
-        except (aiohttp.ClientError, TimeoutError) as e:
-            self._log.error("ClientError or TimeoutError exception: %s", e)
-            return False
-        if resp:
+            resp.raise_for_status()
             text = await resp.text()
-            result = {"text": text, "resp": resp}
-        return result
+        except aiohttp.ClientResponseError as err:
+            raise JPIResponseError(
+                f"JPI request failed with HTTP status {err.status}"
+            ) from err
+        except (aiohttp.ClientError, TimeoutError) as err:
+            raise JPIConnectionError("Unable to communicate with JPI") from err
+        finally:
+            if resp is not None:
+                resp.release()
+
+        return {"text": text, "resp": resp}
 
     async def getDeviceName(self, url: str):
         """
         Returns the device name as provided by the manufacturer.
         E.g. Samsung sets that as 'Samsung SM-J320FN' for a Galaxy J3.
         """
-        target = f"{url}?action=getDeviceName"
+        target = str(URL(url).update_query(action="getDeviceName"))
         resp = await self.get(target)
         self._log.debug("getDeviceName resp=%s", resp)
         device_name = None

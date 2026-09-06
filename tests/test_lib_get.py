@@ -1,128 +1,76 @@
-"""Tests for JPILibrary methods."""
+"""Tests for JPILibrary HTTP requests."""
 
 import asyncio
-import logging
 from unittest.mock import AsyncMock, MagicMock
 
+import aiohttp
 import pytest
 
-from pyjpi import jpiInit
+from pyjpi import JPIConnectionError, JPIResponseError, jpiInit
 
 from .const import URL
 
 
+def create_response(text: str = "OK", status: int = 200) -> MagicMock:
+    """Create a mocked aiohttp response."""
+    response = MagicMock()
+    response.status = status
+    response.text = AsyncMock(return_value=text)
+    return response
+
+
 @pytest.mark.asyncio
 async def test_get_uses_session_and_returns_text():
-    """Test for a HTTP GET method."""
-
-    class FakeResp:
-        """Fake response context manager."""
-
-        status = 200
-
-        async def text(self):  # pylint: disable=C0116
-            return "OK"
-
-        async def __aenter__(self):
-            return self
-
-        async def __aexit__(self, *exc):
-            pass
-
+    """Test a successful HTTP GET request."""
+    response = create_response()
     session = MagicMock()
-    session.get = AsyncMock(return_value=FakeResp())
-
+    session.get = AsyncMock(return_value=response)
     lib = await jpiInit(session)
-    out = await lib.get(URL)
-    assert out["text"] == "OK"
-    assert out["resp"].status == 200
 
+    result = await lib.get(URL)
+
+    assert result == {"text": "OK", "resp": response}
     session.get.assert_awaited_once_with(URL)
+    response.raise_for_status.assert_called_once_with()
+    response.release.assert_called_once_with()
 
 
-# pylint: disable=import-outside-toplevel
 @pytest.mark.asyncio
 async def test_get_raises_on_http_error():
-    """get() should raise when the response is an HTTP error (e.g., 404)."""
-    from aiohttp import ClientResponseError
-    from aiohttp.client_reqrep import RequestInfo
-    from multidict import CIMultiDict, CIMultiDictProxy
-    from yarl import URL as YURL
-
-    # Minimal RequestInfo for the exception
-    req_info = RequestInfo(
-        url=YURL(URL),
-        method="GET",
-        headers=CIMultiDictProxy(CIMultiDict()),
-        real_url=YURL(URL),
+    """Test an HTTP error is mapped to JPIResponseError."""
+    response = create_response(status=404)
+    response.raise_for_status.side_effect = aiohttp.ClientResponseError(
+        request_info=MagicMock(),
+        history=(),
+        status=404,
+        message="Not Found",
     )
-
-    class FakeErrResp:
-        """Fake response error."""
-
-        status = 404
-
-        async def text(self):
-            """Raise when your code calls .text()."""
-            raise ClientResponseError(
-                request_info=req_info,
-                history=(),
-                status=404,
-                message="Not Found",
-            )
-
-        async def __aenter__(self):
-            return self
-
-        async def __aexit__(self, *exc):
-            pass
-
     session = MagicMock()
-    session.get = AsyncMock(return_value=FakeErrResp())
-
+    session.get = AsyncMock(return_value=response)
     lib = await jpiInit(session)
 
-    with pytest.raises(ClientResponseError):
+    with pytest.raises(
+        JPIResponseError,
+        match="JPI request failed with HTTP status 404",
+    ):
         await lib.get(URL)
 
-    session.get.assert_awaited_once_with(URL)
-
-
-# pylint: disable=import-outside-toplevel
-@pytest.mark.asyncio
-async def test_get_returns_false_on_connection_error(caplog):
-    """If the URL is unavailable (wrong port/host), get() returns False and logs an error."""
-    import aiohttp
-
-    session = MagicMock()
-    session.get = AsyncMock(
-        side_effect=aiohttp.ClientConnectionError("connection failed")
-    )
-
-    lib = await jpiInit(session)
-
-    # If your library logger has a known name, pass it here:
-    # with caplog.at_level(logging.ERROR, logger="pyjpi"):
-    with caplog.at_level(logging.ERROR):
-        out = await lib.get(URL)
-
-    assert out is False
-    # Either check the aggregated text…
-    assert "Error exception:" in caplog.text
-    # …or iterate records robustly
-    assert any("Error exception:" in rec.getMessage() for rec in caplog.records)
+    response.release.assert_called_once_with()
 
 
 @pytest.mark.asyncio
-async def test_get_returns_false_on_timeout(caplog):
-    """Specifically tet for timeouts."""
-
+@pytest.mark.parametrize(
+    "error",
+    [
+        aiohttp.ClientConnectionError("connection failed"),
+        asyncio.TimeoutError(),
+    ],
+)
+async def test_get_raises_on_connection_error(error: Exception):
+    """Test connection and timeout errors are mapped consistently."""
     session = MagicMock()
-    session.get = AsyncMock(side_effect=asyncio.TimeoutError())
-
+    session.get = AsyncMock(side_effect=error)
     lib = await jpiInit(session)
 
-    with caplog.at_level("ERROR"):
-        out = await lib.get(URL)
-
-    assert out is False
+    with pytest.raises(JPIConnectionError, match="Unable to communicate with JPI"):
+        await lib.get(URL)

@@ -7,6 +7,9 @@ from importlib.metadata import PackageNotFoundError, version
 
 import aiohttp
 
+from .exceptions import JPIConnectionError as JPIConnectionError
+from .exceptions import JPIError as JPIError
+from .exceptions import JPIResponseError as JPIResponseError
 from .library import JPILibrary
 
 
