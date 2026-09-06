@@ -4,6 +4,7 @@
 # 3) create a GitHub release with source distributions
 
 name: New tag
+run-name: Publishing v${{ github.ref_name }}
 
 on:
   workflow_dispatch:
@@ -101,4 +102,4 @@ jobs:
             --generate-notes \
             ${RUNNER_TEMP}/${{ steps.vars.outputs.pkg }}.tar.gz \
             ${RUNNER_TEMP}/${{ steps.vars.outputs.pkg }}.zip
-          gh workflow run release.yml
+          gh workflow run release.yml -f tag="$TAG"

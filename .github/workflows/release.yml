@@ -4,12 +4,18 @@
 # NB: does nothing if the package has already been published in this version.
 
 name: New release
+run-name: Releasing v${{ inputs.tag || github.event.release.tag_name }}
 
 env:
   VENV: venv
 
 on:
   workflow_dispatch:
+    inputs:
+      tag:
+        description: Version tag to release
+        required: true
+        type: string
   release:
     types: [created]
 
