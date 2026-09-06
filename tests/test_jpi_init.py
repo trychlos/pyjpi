@@ -4,7 +4,7 @@ from unittest.mock import MagicMock
 
 import pytest
 
-from pyjpi import jpiInit, JPILibrary
+from pyjpi import JPILibrary, jpiInit
 
 
 @pytest.mark.asyncio
@@ -19,8 +19,9 @@ async def test_jpiInit_returns_library():
 @pytest.mark.asyncio
 async def test_jpiInit_falls_back_to_local_version(monkeypatch):
     """Test for PackageNotFoundError exception."""
-    import pyjpi as pkg
     from importlib.metadata import PackageNotFoundError
+
+    import pyjpi as pkg
 
     # Make version lookup fail
     def fake_version(_):

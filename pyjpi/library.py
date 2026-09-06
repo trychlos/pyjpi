@@ -9,11 +9,27 @@ from __future__ import annotations
 
 import logging
 from datetime import UTC, datetime
+from typing import TypedDict
 
 import aiohttp
 from yarl import URL
 
 from .exceptions import JPIConnectionError, JPIResponseError
+
+
+class BatteryInfo(TypedDict):
+    """Battery information returned by JPI."""
+
+    level: int
+    charging: bool
+    power: bool
+
+
+class JPIResponse(TypedDict):
+    """Raw response and decoded text returned by JPI."""
+
+    text: str
+    resp: aiohttp.ClientResponse
 
 
 class JPILibrary:
@@ -26,7 +42,7 @@ class JPILibrary:
         self._log = logging.getLogger(__name__)
         self._log.debug("JPILibrary v%s successfully instantiated", version)
 
-    def _batt_parse_text(self, text: str) -> dict:
+    def _batt_parse_text(self, text: str) -> BatteryInfo:
         """
         Parse battery info text into a structured dictionary.
         Input:
@@ -36,7 +52,9 @@ class JPILibrary:
         Output:
             {'level': 52, 'charging': False, 'power': False}
         """
-        result = {}
+        level: int | None = None
+        charging: bool | None = None
+        power: bool | None = None
         try:
             for line in text.splitlines():
                 if not line.strip():
@@ -47,21 +65,25 @@ class JPILibrary:
                 value = value.strip()
 
                 if key == "Niveau":
-                    result["level"] = int(value.removesuffix("%").strip())
+                    level = int(value.removesuffix("%").strip())
                 elif key == "En charge":
-                    result["charging"] = self._parse_boolean(value)
+                    charging = self._parse_boolean(value)
                 elif key == "Alim. connectée":
-                    result["power"] = self._parse_boolean(value)
+                    power = self._parse_boolean(value)
         except ValueError as err:
             raise JPIResponseError("Invalid battery information response") from err
 
-        if set(result) != {"level", "charging", "power"}:
+        if level is None or charging is None or power is None:
             raise JPIResponseError("Incomplete battery information response")
 
-        if not 0 <= result["level"] <= 100:
+        if not 0 <= level <= 100:
             raise JPIResponseError("Battery level is outside the valid range")
 
-        return result
+        return {
+            "level": level,
+            "charging": charging,
+            "power": power,
+        }
 
     @staticmethod
     def _parse_boolean(value: str) -> bool:
@@ -71,7 +93,7 @@ class JPILibrary:
             raise ValueError(f"Invalid boolean value: {value}")
         return normalized == "OUI"
 
-    async def battInfo(self, url: str) -> dict:
+    async def battInfo(self, url: str) -> BatteryInfo:
         """
         Returns the battery informations as a hash:
             level: <int>
@@ -83,7 +105,7 @@ class JPILibrary:
         self._log.debug("battInfo resp=%s", resp)
         return self._batt_parse_text(resp["text"])
 
-    async def get(self, url: str) -> dict[str, object]:
+    async def get(self, url: str) -> JPIResponse:
         """
         Returns an object containing the raw HTTP response from GETting the provided url plus the got text content.
         Uses async I/O to avoid blocking the main event loop.
@@ -104,6 +126,7 @@ class JPILibrary:
             if resp is not None:
                 resp.release()
 
+        assert resp is not None
         return {"text": text, "resp": resp}
 
     async def getDeviceName(self, url: str) -> str:

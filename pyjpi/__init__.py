@@ -10,7 +10,9 @@ import aiohttp
 from .exceptions import JPIConnectionError as JPIConnectionError
 from .exceptions import JPIError as JPIError
 from .exceptions import JPIResponseError as JPIResponseError
-from .library import JPILibrary
+from .library import BatteryInfo as BatteryInfo
+from .library import JPILibrary as JPILibrary
+from .library import JPIResponse as JPIResponse
 
 
 async def _get_version() -> str:
