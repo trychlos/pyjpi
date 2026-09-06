@@ -42,7 +42,6 @@ jobs:
           . $VENV/bin/activate
           uv pip install -r requirements.txt -r requirements-test.txt
           uv pip install -e .
-          uv pip install coverage-badge
       - name: Run pytest
         run: |
           . $VENV/bin/activate
@@ -50,7 +49,6 @@ jobs:
           pytest --log-level info tests/ --cov=pyjpi
           coverage report --fail-under=85
           coverage xml
-          coverage-badge -o .github/assets/coverage.svg -f
       - name: Create Shields endpoint JSON
         run: |
           . $VENV/bin/activate
@@ -62,7 +60,7 @@ jobs:
           git config user.name  "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git status
-          git add .github/assets/coverage.svg .github/assets/coverage.json
+          git add .github/assets/coverage.json
           git commit -m "ci: update coverage informations [skip ci]" || echo "No changes"
           git push
 
