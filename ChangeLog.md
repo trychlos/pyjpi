@@ -2,6 +2,13 @@
 
 ## ChangeLog
 
+### 0.1.28
+
+    Release date: 2026-09-06
+
+    - Fix release coverage reporting with current setuptools versions
+    - Generate the GitHub release name directly from the version tag
+
 ### 0.1.27
 
     Release date: 2026-09-06
