@@ -68,9 +68,9 @@ async def main():
     # Then just has to call the library functions.
     try:
         res = await handle.get( url )
-        # returns a dict { resp: ClientResponse, text: str } or False
+        # returns a dict { resp: ClientResponse, text: str }
         res = await handle.getDeviceName( url )
-        # returns the device name as set by the manufacturer (a single string) or False
+        # returns the device name as set by the manufacturer (a single string)
         res = await handle.battInfo( url )
         # returns a dict { level: integer, charging: bool, power: bool }
 
@@ -106,11 +106,16 @@ Returns a dict with:
     text: the resp.text() content
 ```
 
+Raises `JPIConnectionError` when communication fails and `JPIResponseError`
+when the device returns an HTTP or invalid response.
+
 - `async getDeviceName( url: str) -> str`:
 
 Runs a HTTP GET method on f"{url}?action=getDeviceName" url.
 
 Returns a string which contains the device name as set by the manufacturer.
+
+Raises `JPIConnectionError` or `JPIResponseError` on failure.
 
 - `async battInfo( url: str) -> dict`:
 
@@ -123,6 +128,8 @@ Returns a dict with:
     charging: a boolean which says if the battery is currently charging
     power: a boolean which says if the power is on on the device.
 ```
+
+Raises `JPIConnectionError` or `JPIResponseError` on failure.
 
 ## Contributing
 

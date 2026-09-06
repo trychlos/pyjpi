@@ -4,7 +4,7 @@ from unittest.mock import AsyncMock, MagicMock
 
 import pytest
 
-from pyjpi import jpiInit
+from pyjpi import JPIResponseError, jpiInit
 
 from .const import URL
 
@@ -57,3 +57,22 @@ async def test_getDeviceName_preserves_existing_query():
     await lib.getDeviceName(f"{URL}?token=secret")
 
     lib.get.assert_awaited_once_with(f"{URL}/?token=secret&action=getDeviceName")
+
+
+@pytest.mark.asyncio
+async def test_getDeviceName_strips_whitespace():
+    """Test surrounding whitespace is removed."""
+    lib = await jpiInit(MagicMock())
+    lib.get = AsyncMock(return_value={"text": "  Pixel-XL (JPI)\n"})
+
+    assert await lib.getDeviceName(URL) == "Pixel-XL (JPI)"
+
+
+@pytest.mark.asyncio
+async def test_getDeviceName_rejects_empty_response():
+    """Test an empty device name is rejected."""
+    lib = await jpiInit(MagicMock())
+    lib.get = AsyncMock(return_value={"text": " \n"})
+
+    with pytest.raises(JPIResponseError, match="Empty device name response"):
+        await lib.getDeviceName(URL)

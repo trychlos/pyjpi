@@ -37,22 +37,41 @@ class JPILibrary:
             {'level': 52, 'charging': False, 'power': False}
         """
         result = {}
-        for line in text.splitlines():
-            if not line.strip():
-                continue  # skip empty lines
-            key, value = line.split(":", 1)
-            key = key.strip()
-            value = value.strip()
+        try:
+            for line in text.splitlines():
+                if not line.strip():
+                    continue
 
-            if key == "Niveau":
-                result["level"] = int(value.strip("%"))
-            elif key == "En charge":
-                result["charging"] = value.upper() == "OUI"
-            elif key == "Alim. connectée":
-                result["power"] = value.upper() == "OUI"
+                key, value = line.split(":", 1)
+                key = key.strip()
+                value = value.strip()
+
+                if key == "Niveau":
+                    result["level"] = int(value.removesuffix("%").strip())
+                elif key == "En charge":
+                    result["charging"] = self._parse_boolean(value)
+                elif key == "Alim. connectée":
+                    result["power"] = self._parse_boolean(value)
+        except ValueError as err:
+            raise JPIResponseError("Invalid battery information response") from err
+
+        if set(result) != {"level", "charging", "power"}:
+            raise JPIResponseError("Incomplete battery information response")
+
+        if not 0 <= result["level"] <= 100:
+            raise JPIResponseError("Battery level is outside the valid range")
+
         return result
 
-    async def battInfo(self, url: str):
+    @staticmethod
+    def _parse_boolean(value: str) -> bool:
+        """Parse a JPI OUI/NON boolean."""
+        normalized = value.upper()
+        if normalized not in {"OUI", "NON"}:
+            raise ValueError(f"Invalid boolean value: {value}")
+        return normalized == "OUI"
+
+    async def battInfo(self, url: str) -> dict:
         """
         Returns the battery informations as a hash:
             level: <int>
@@ -61,11 +80,8 @@ class JPILibrary:
         """
         target = str(URL(url).update_query(action="battInfo"))
         resp = await self.get(target)
-        result = None
         self._log.debug("battInfo resp=%s", resp)
-        if resp:
-            result = self._batt_parse_text(resp["text"])
-        return result
+        return self._batt_parse_text(resp["text"])
 
     async def get(self, url: str) -> dict[str, object]:
         """
@@ -90,7 +106,7 @@ class JPILibrary:
 
         return {"text": text, "resp": resp}
 
-    async def getDeviceName(self, url: str):
+    async def getDeviceName(self, url: str) -> str:
         """
         Returns the device name as provided by the manufacturer.
         E.g. Samsung sets that as 'Samsung SM-J320FN' for a Galaxy J3.
@@ -98,7 +114,7 @@ class JPILibrary:
         target = str(URL(url).update_query(action="getDeviceName"))
         resp = await self.get(target)
         self._log.debug("getDeviceName resp=%s", resp)
-        device_name = None
-        if resp:
-            device_name = resp["text"]
+        device_name = resp["text"].strip()
+        if not device_name:
+            raise JPIResponseError("Empty device name response")
         return device_name
