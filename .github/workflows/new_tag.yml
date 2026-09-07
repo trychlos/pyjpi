@@ -4,7 +4,7 @@
 # 3) create a GitHub release with source distributions
 
 name: New tag
-run-name: Publishing v${{ github.ref_name }}
+run-name: Publishing v${{ github.ref_name }} to test.pyPI.org
 
 on:
   push:

@@ -7,6 +7,7 @@
     Release date:
 
     - Have a debug line before and after the device request
+    - Improve GH actions names
 
 ### 0.1.29
 

@@ -4,7 +4,7 @@
 # NB: does nothing if the package has already been published in this version.
 
 name: New release
-run-name: Releasing v${{ inputs.tag || github.event.release.tag_name }}
+run-name: Releasing v${{ inputs.tag || github.event.release.tag_name }} to (production) pyPI.org
 
 env:
   VENV: venv
