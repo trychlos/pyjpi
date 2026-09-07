@@ -79,11 +79,14 @@ class JPILibrary:
         if not 0 <= level <= 100:
             raise JPIResponseError("Battery level is outside the valid range")
 
-        return {
+        resp: BatteryInfo = {
             "level": level,
             "charging": charging,
             "power": power,
         }
+        self._log.debug("battInfo parsed=%r", resp)
+
+        return resp
 
     @staticmethod
     def _parse_boolean(value: str) -> bool:

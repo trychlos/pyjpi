@@ -6,6 +6,10 @@
 
     Release date:
 
+    - Name release workflows by version
+    - Restrict releases to stable semantic version tags
+    - Debug the returned parsed response
+
 ### 0.1.28
 
     Release date: 2026-09-06
