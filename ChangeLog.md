@@ -2,9 +2,9 @@
 
 ## ChangeLog
 
-### 0.1.29-rc.0
+### 0.1.29
 
-    Release date:
+    Release date: 2026-09-07
 
     - Name release workflows by version
     - Restrict releases to stable semantic version tags
