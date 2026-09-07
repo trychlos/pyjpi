@@ -53,7 +53,7 @@ jobs:
         run: |
           . $VENV/bin/activate
           mkdir -p .github/assets
-          python -c "import xml.etree.ElementTree as ET, json; r=ET.parse('coverage.xml').getroot(); pct=round(float(r.attrib.get('line-rate',0.0))*100); color=('green' if pct>=90 else 'yellowgreen' if pct>=75 else 'orange'); json.dump({'schemaVersion':1,'label':'coverage','message':f'{pct}%','color':color}, open('.github/assets/coverage.json','w'))"
+          python -c "import xml.etree.ElementTree as ET, json, pathlib; r=ET.parse('coverage.xml').getroot(); pct=round(float(r.attrib.get('line-rate',0.0))*100); color=('green' if pct>=90 else 'yellowgreen' if pct>=75 else 'orange'); pathlib.Path('.github/assets/coverage.json').write_text(json.dumps({'schemaVersion':1,'label':'coverage','message':f'{pct}%','color':color}) + '\n')"
       - name: Commit coverage infos
         run: |
           git config --global --add safe.directory $(pwd)
@@ -61,11 +61,16 @@ jobs:
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git status
           git add .github/assets/coverage.json
-          git commit -m "ci: update coverage informations [skip ci]" || echo "No changes"
-          git push
+          if git diff --cached --quiet; then
+            echo "No changes"
+          else
+            git commit -m "ci: update coverage informations [skip ci]"
+            git push
+          fi
 
   complexity:
     name: Complexity (radon)
+    needs: pytest
     runs-on: ubuntu-latest
     container: python:3.13-slim
     steps:
@@ -91,7 +96,7 @@ jobs:
           export CCMAX=$(radon cc -s pyjpi/ tests/ | grep -E ' - [A-F] \([0-9]+)' | awk '{ print $5 $6 }' | sort -r | head -1 | sed -e 's|(.*$||')
           echo "CCMAX=$CCMAX"
           mkdir -p .github/assets
-          python -c 'import os, json; rank = os.environ["CCMAX"].upper(); colors = {"A":"brightgreen","B":"green","C":"yellow","D":"orange","E":"red","F":"critical"}; json.dump({"schemaVersion":1,"label":"CC Max","message":rank,"color":colors.get(rank,"lightgrey")}, open(".github/assets/radon.json","w"))'
+          python -c 'import os, json, pathlib; rank = os.environ["CCMAX"].upper(); colors = {"A":"brightgreen","B":"green","C":"yellow","D":"orange","E":"red","F":"critical"}; pathlib.Path(".github/assets/radon.json").write_text(json.dumps({"schemaVersion":1,"label":"CC Max","message":rank,"color":colors.get(rank,"lightgrey")}) + "\n")'
       - name: Commit complexity badge to repo
         run: |
           git config --global --add safe.directory $(pwd)
@@ -99,5 +104,9 @@ jobs:
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git status
           git add .github/assets/radon.json
-          git commit -m "ci: update radon informations [skip ci]" || echo "No changes"
-          git push
+          if git diff --cached --quiet; then
+            echo "No changes"
+          else
+            git commit -m "ci: update radon informations [skip ci]"
+            git push
+          fi
