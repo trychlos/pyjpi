@@ -6,7 +6,7 @@
 
     Release date:
 
-    -
+    - Have a debug line before and after the device request
 
 ### 0.1.29
 

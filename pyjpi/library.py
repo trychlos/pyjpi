@@ -104,6 +104,7 @@ class JPILibrary:
             power: <bool>
         """
         target = str(URL(url).update_query(action="battInfo"))
+        self._log.debug("battInfo target=%s", target)
         resp = await self.get(target)
         self._log.debug("battInfo resp=%s", resp)
         return self._batt_parse_text(resp["text"])
