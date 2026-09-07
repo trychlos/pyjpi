@@ -2,9 +2,9 @@
 
 ## ChangeLog
 
-### 0.1.30-rc.0
+### 0.1.30
 
-    Release date:
+    Release date: 2026- 9- 7
 
     - Have a debug line before and after the device request
     - Improve GH actions names
